@@ -1,4 +1,4 @@
-module go-web
+module github.com/maxiloEmmmm/go-web
 
 go 1.13
 
