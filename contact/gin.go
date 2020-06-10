@@ -15,6 +15,21 @@ type GinHelpHandlerFunc func(c *GinHelp)
 
 type H map[string]interface{}
 
+func RouteAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("Authorization")
+
+		jwt := JwtNew()
+		jwt.SetSecret(Config.Jwt.Secret)
+
+		if err := jwt.ParseToken(token); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+		} else {
+			c.Next()
+		}
+	}
+}
+
 func InitGin() {
 	switch Config.App.Mode {
 	case "debug", "":
