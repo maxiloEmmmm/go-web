@@ -51,6 +51,7 @@ type BoolField struct {
 }
 
 func (b *BoolField) Scan(value interface{}) error {
+	// todo: test db field type for tinyint mediumInt
 	if value == nil || value.(int64) == 1 {
 		b.Bool = false
 	} else {
