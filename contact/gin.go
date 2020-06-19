@@ -1,10 +1,13 @@
 package contact
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/maxiloEmmmm/go-web/lib"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 type GinHelp struct {
@@ -15,19 +18,21 @@ type GinHelpHandlerFunc func(c *GinHelp)
 
 type H map[string]interface{}
 
-func RouteAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
+func GinRouteAuth() gin.HandlerFunc {
+	return GinHelpHandle(func(c *GinHelp) {
+		token := c.GetToken()
 
 		jwt := JwtNew()
+
 		jwt.SetSecret(Config.Jwt.Secret)
 
 		if err := jwt.ParseToken(token); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 		} else {
+			c.Set("auth", jwt)
 			c.Next()
 		}
-	}
+	})
 }
 
 func InitGin() {
@@ -43,14 +48,60 @@ func InitGin() {
 	}
 }
 
+var ServerErrorWrite = new(ServerErrorIO)
+
+type ServerErrorIO struct{}
+
+func (sew ServerErrorIO) Write(p []byte) (n int, err error) {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte("[SERVER_ERROR]:"))
+	buffer.Write(p)
+	return gin.DefaultWriter.Write(buffer.Bytes())
+}
+
 func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		h(&GinHelp{c})
+		help := &GinHelp{c}
+		defer func(c *GinHelp) {
+			if err := recover(); err != nil {
+				switch err.(type) {
+				case ResponseAbortError:
+					{
+						return
+					}
+				default:
+					{
+						errMsg := ""
+						if e, ok := err.(error); ok {
+							errMsg = e.(error).Error()
+						} else {
+							errMsg = fmt.Sprintf("%+v", err)
+						}
+
+						md5 := lib.Md5(fmt.Sprintf("%d%s", time.Now().Unix(), errMsg))
+						buffer := new(bytes.Buffer)
+						buffer.WriteString(md5)
+						buffer.WriteString("-")
+						buffer.WriteString(errMsg)
+						ServerErrorWrite.Write(buffer.Bytes())
+						c.ServerError(md5)
+					}
+				}
+			}
+		}(help)
+		h(help)
 	}
+}
+
+type ResponseAbortError struct{}
+
+func Error() string {
+	return "abort"
 }
 
 func (help *GinHelp) Response(code int, jsonObj interface{}) {
 	help.AbortWithStatusJSON(code, jsonObj)
+	panic(ResponseAbortError{})
 }
 
 func (help *GinHelp) Resource(data interface{}) {
@@ -70,60 +121,54 @@ func (help *GinHelp) ResourceNotFound() {
 }
 
 func (help *GinHelp) ServerError(msg string) {
-	help.Response(http.StatusInternalServerError, msg)
+	help.Response(http.StatusInternalServerError, map[string]interface{}{"msg": msg})
 }
 
-type ValidInputSet struct {
-	Msg   string
-	Valid []InvalidError
+func (help *GinHelp) InValidInput(msg string, error string) {
+	buffer := new(bytes.Buffer)
+	buffer.WriteString(msg)
+	buffer.WriteString(", ")
+	buffer.WriteString(error)
+	help.Response(http.StatusUnprocessableEntity, buffer.String())
 }
 
-func (help *GinHelp) InValidInput(msg string, data []InvalidError) {
-	help.Response(http.StatusUnprocessableEntity, ValidInputSet{
-		msg, data,
-	})
-}
-
-type InvalidError struct {
-	Field string
-	Param interface{}
-	Tag   string
-	Msg   string
-}
-
-func (help *GinHelp) InValid(err error) {
-	if errors, ve := err.(validator.ValidationErrors); ve {
-		var errs []InvalidError
-		for i := 0; i < len(errors); i++ {
-			errItem := errors[i]
-			errs = append(errs, InvalidError{
-				Field: errItem.Field(),
-				Param: errItem.Param(),
-				Tag:   errItem.Tag(),
-				Msg:   errItem.Translate(Tranintance.Tran),
-			})
-		}
-		help.InValidInput("", errs)
+func (help *GinHelp) InValid(msg string, error error) {
+	if error != nil {
+		help.InValidInput(msg, error.Error())
 	}
 }
 
 // 当post时 InValidBind 获取query显得苍白无力
 func (help *GinHelp) InValidBindQuery(query interface{}) {
-	help.InValid(help.ShouldBindQuery(query))
+	help.InValid("query bind err", help.ShouldBindQuery(query))
+}
+
+func (help *GinHelp) InValidBindUri(query interface{}) {
+	help.InValid("uri bind err", help.ShouldBindUri(query))
 }
 
 func (help *GinHelp) InValidBind(json interface{}) {
-	help.InValid(help.ShouldBind(json))
+	help.InValid("body bind err", help.ShouldBind(json))
 }
 
 func (help *GinHelp) Unauthorized(msg string) {
-	help.Response(http.StatusUnauthorized, msg)
+	help.Response(http.StatusUnauthorized, map[string]interface{}{"msg": msg})
 }
 
 func (help *GinHelp) BadRequest(msg string) {
-	help.Response(http.StatusBadRequest, msg)
+	help.Response(http.StatusBadRequest, map[string]interface{}{"msg": msg})
 }
 
 func (help *GinHelp) Forbidden(msg string) {
-	help.Response(http.StatusForbidden, msg)
+	help.Response(http.StatusForbidden, map[string]interface{}{"msg": msg})
+}
+
+func (help *GinHelp) GetToken() string {
+	token := help.GetHeader("Authorization")
+
+	if len(token) == 0 {
+		token, _ = help.GetQuery("token")
+	}
+
+	return token
 }

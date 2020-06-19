@@ -17,13 +17,19 @@ type ConfigMap struct {
 	}
 
 	Jwt struct {
-		Secret    string
-		LifeCycle string `json:"life_cycle"`
+		Secret string
 	}
 
 	App struct {
 		Port int
 		Mode string
+	}
+
+	Redis struct {
+		Host     string
+		Port     int
+		Db       int
+		Password string
 	}
 }
 

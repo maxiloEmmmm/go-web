@@ -8,6 +8,7 @@ require (
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.3.0
+	github.com/go-redis/redis/v8 v8.0.0-beta.5 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/jinzhu/gorm v1.9.12
 	gopkg.in/yaml.v2 v2.3.0

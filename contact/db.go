@@ -17,6 +17,10 @@ var (
 
 type ScopeFunction func(db *gorm.DB) *gorm.DB
 
+func DbClose() error {
+	return Db.Close()
+}
+
 func InitDB() {
 	var err error
 	Db, err = gorm.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",

@@ -1,6 +1,9 @@
 package contact
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
@@ -19,6 +22,8 @@ func JwtNew() *JwtLib {
 
 	instance := &JwtLib{}
 
+	instance.Secret = []byte(Config.Jwt.Secret)
+
 	instance.Claim.StandardClaims = jwt.StandardClaims{
 		Audience:  "front",
 		Issuer:    "XJ-LA",
@@ -35,6 +40,21 @@ func (j *JwtLib) SetPrimaryKey(value string) *JwtLib {
 
 func (j *JwtLib) SetExpiresAt(value int64) *JwtLib {
 	j.Claim.ExpiresAt = value
+	return j
+}
+
+func (j *JwtLib) SetExpiresAtWeek() *JwtLib {
+	j.Claim.ExpiresAt = time.Now().Add(7 * 24 * time.Hour).Unix()
+	return j
+}
+
+func (j *JwtLib) SetExpiresAtDay(value int64) *JwtLib {
+	j.Claim.ExpiresAt = time.Now().Add(24 * time.Hour).Unix()
+	return j
+}
+
+func (j *JwtLib) SetExpiresAt2Hour(value int64) *JwtLib {
+	j.Claim.ExpiresAt = time.Now().Add(2 * time.Hour).Unix()
 	return j
 }
 
@@ -67,14 +87,24 @@ func (j *JwtLib) ParseToken(token string) (err error) {
 		return err
 	}
 
-	if _, ok := tokenObj.Claims.(Claim); ok && tokenObj.Valid {
+	if _, ok := tokenObj.Claims.(*Claim); ok && tokenObj.Valid {
+		if IsForgetToken(token) {
+			return jwt.NewValidationError("失效token", 0)
+		}
+
 		return nil
+	} else if !ok {
+		return errors.New("jwt类型不匹配")
 	} else {
 		return err
 	}
 }
 
 func (j *JwtLib) RefreshToken(addTime time.Duration) (token string, err error) {
+	if err = j.ForgetToken(); err != nil {
+		return
+	}
+
 	j.Claim.ExpiresAt = time.Now().Add(addTime).Unix()
 	token, err = j.GenerateToken()
 
@@ -83,4 +113,26 @@ func (j *JwtLib) RefreshToken(addTime time.Duration) (token string, err error) {
 	} else {
 		return token, nil
 	}
+}
+
+func (j *JwtLib) ForgetToken() (err error) {
+	token, err := j.GenerateToken()
+	if err != nil {
+		return
+	}
+
+	result := RedisClient.SetNX(
+		context.Background(),
+		fmt.Sprintf("jwt_forget:%s", token),
+		1,
+		time.Duration(j.Claim.ExpiresAt-time.Now().Unix())*time.Second)
+	if !result.Val() {
+		return result.Err()
+	} else {
+		return
+	}
+}
+
+func IsForgetToken(token string) bool {
+	return RedisClient.Exists(context.Background(), fmt.Sprintf("jwt_forget:%s", token)).Val() == 1
 }
