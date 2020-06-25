@@ -33,21 +33,24 @@ type ConfigMap struct {
 	}
 }
 
-var Config ConfigMap
+var Config = ConfigMap{
+	App: struct {
+		Port int
+		Mode string
+	}{Port: 8000, Mode: "release"},
+}
+
+var ConfigPath = ""
 
 func InitConfig() {
-	configFile, err := ioutil.ReadFile("./config.yml")
+	configFile, err := ioutil.ReadFile(ConfigPath)
 
 	if err != nil {
-		panic(fmt.Sprintf("打开文件失败: %s", err))
+		return
 	}
 
 	err = yaml.Unmarshal(configFile, &Config)
 	if err != nil {
 		panic(fmt.Sprintf("解析配置失败: %s", err))
-	}
-
-	if Config.App.Port == 0 {
-		Config.App.Port = 8080
 	}
 }

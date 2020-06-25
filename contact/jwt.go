@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	lib "github.com/maxiloEmmmm/go-tool"
 	"time"
 )
 
@@ -68,14 +69,10 @@ func (j *JwtLib) SetSecret(secret string) *JwtLib {
 	return j
 }
 
-func (j *JwtLib) GenerateToken() (token string, err error) {
-	token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, j.Claim).SignedString(j.Secret)
-
-	if err != nil {
-		return "", err
-	} else {
-		return token, nil
-	}
+func (j *JwtLib) GenerateToken() (token string) {
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, j.Claim).SignedString(j.Secret)
+	lib.AssetsError(err)
+	return token
 }
 
 func (j *JwtLib) ParseToken(token string) (err error) {
@@ -100,37 +97,22 @@ func (j *JwtLib) ParseToken(token string) (err error) {
 	}
 }
 
-func (j *JwtLib) RefreshToken(addTime time.Duration) (token string, err error) {
-	if err = j.ForgetToken(); err != nil {
-		return
-	}
-
+func (j *JwtLib) RefreshToken(addTime time.Duration) (token string) {
+	j.ForgetToken()
 	j.Claim.ExpiresAt = time.Now().Add(addTime).Unix()
-	token, err = j.GenerateToken()
-
-	if err != nil {
-		return "", err
-	} else {
-		return token, nil
-	}
+	token = j.GenerateToken()
+	return token
 }
 
-func (j *JwtLib) ForgetToken() (err error) {
-	token, err := j.GenerateToken()
-	if err != nil {
-		return
-	}
+func (j *JwtLib) ForgetToken() {
+	token := j.GenerateToken()
 
 	result := RedisClient.SetNX(
 		context.Background(),
 		fmt.Sprintf("jwt_forget:%s", token),
 		1,
 		time.Duration(j.Claim.ExpiresAt-time.Now().Unix())*time.Second)
-	if !result.Val() {
-		return result.Err()
-	} else {
-		return
-	}
+	lib.AssetsError(result.Err())
 }
 
 func IsForgetToken(token string) bool {

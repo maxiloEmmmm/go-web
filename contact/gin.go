@@ -3,7 +3,7 @@ package contact
 import (
 	"bytes"
 	"fmt"
-	"github.com/maxiloEmmmm/go-web/lib"
+	lib "github.com/maxiloEmmmm/go-tool"
 	"net/http"
 	"time"
 
@@ -33,6 +33,24 @@ func GinRouteAuth() gin.HandlerFunc {
 			c.Next()
 		}
 	})
+}
+
+func GinCors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		method := c.Request.Method
+
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
+		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
+		c.Header("Access-Control-Allow-Credentials", "true")
+
+		if method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+		}
+
+		c.Next()
+	}
 }
 
 func InitGin() {
@@ -84,7 +102,7 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 						buffer.WriteString("-")
 						buffer.WriteString(errMsg)
 						ServerErrorWrite.Write(buffer.Bytes())
-						c.ServerError(md5)
+						c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]interface{}{"msg": md5})
 					}
 				}
 			}

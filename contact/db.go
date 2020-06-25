@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/maxiloEmmmm/go-web/lib"
+	lib "github.com/maxiloEmmmm/go-tool"
 	"log"
 )
 
@@ -19,6 +19,10 @@ type ScopeFunction func(db *gorm.DB) *gorm.DB
 
 func DbClose() error {
 	return Db.Close()
+}
+
+func CustomerTableName(table string) string {
+	return lib.StringJoin(Config.Database.Prefix, table)
 }
 
 func InitDB() {
@@ -38,7 +42,7 @@ func InitDB() {
 	Db.DB().SetMaxOpenConns(100)
 
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		return fmt.Sprintf("%s%s", Config.Database.Prefix, defaultTableName)
+		return lib.StringJoin(Config.Database.Prefix, defaultTableName)
 	}
 
 	Db.SingularTable(true)
