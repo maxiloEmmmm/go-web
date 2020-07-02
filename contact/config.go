@@ -40,7 +40,7 @@ var Config = ConfigMap{
 	}{Port: 8000, Mode: "release"},
 }
 
-var ConfigPath = ""
+var ConfigPath = "./config.yml"
 
 func InitConfig() {
 	configFile, err := ioutil.ReadFile(ConfigPath)

@@ -85,7 +85,14 @@ func (j *JwtLib) ParseToken(token string) (err error) {
 	}
 
 	if _, ok := tokenObj.Claims.(*Claim); ok && tokenObj.Valid {
-		if IsForgetToken(token) {
+		forgetTime, isForget := IsForgetToken(token)
+		// 失效token且失效超过5s
+		// 5s是为了
+		// 假设A请求发起
+		// 发起A后, B请求发起refreshToken
+		// 由于不可抗力A在B结束后才请求到服务器, A持有的token此时已forget
+		// 给与A 5s缓冲时间, 也就是说refreshToken后5s原token也就是已失效token仍有效
+		if isForget && time.Now().Unix()-forgetTime > 5 {
 			return jwt.NewValidationError("失效token", 0)
 		}
 
@@ -107,14 +114,24 @@ func (j *JwtLib) RefreshToken(addTime time.Duration) (token string) {
 func (j *JwtLib) ForgetToken() {
 	token := j.GenerateToken()
 
+	now := time.Now().Unix()
 	result := RedisClient.SetNX(
 		context.Background(),
 		fmt.Sprintf("jwt_forget:%s", token),
-		1,
-		time.Duration(j.Claim.ExpiresAt-time.Now().Unix())*time.Second)
+		now,
+		time.Duration(j.Claim.ExpiresAt-now)*time.Second)
 	lib.AssetsError(result.Err())
 }
 
-func IsForgetToken(token string) bool {
-	return RedisClient.Exists(context.Background(), fmt.Sprintf("jwt_forget:%s", token)).Val() == 1
+func IsForgetToken(token string) (int64, bool) {
+	cmd := RedisClient.Get(context.Background(), lib.StringJoin("jwt_forget:", token))
+	if cmd.Err() != nil {
+		return 0, false
+	} else {
+		if value, err := cmd.Int64(); err != nil {
+			return 0, true
+		} else {
+			return value, true
+		}
+	}
 }

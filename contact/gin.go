@@ -3,15 +3,44 @@ package contact
 import (
 	"bytes"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	lib "github.com/maxiloEmmmm/go-tool"
 	"net/http"
+	"strconv"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type GinHelp struct {
 	*gin.Context
+}
+
+type page struct {
+	Current         int
+	Size            int
+	PageKey         string
+	PageSizeKey     string
+	PageSizeDefault int
+}
+
+var GinPage = page{Current: 1, Size: 10, PageKey: "page", PageSizeKey: "page_size", PageSizeDefault: 15}
+
+func GinGormPageHelp(db *gorm.DB, data interface{}) int {
+	return GinGormPageBase(db, data, GinPage.Current, GinPage.Size)
+}
+
+func GinGormPageHelpWithOptionSize(db *gorm.DB, data interface{}, size int) int {
+	return GinGormPageBase(db, data, GinPage.Current, size)
+}
+
+func GinGormPageHelpWithOption(db *gorm.DB, data interface{}, current int, size int) int {
+	return GinGormPageBase(db, data, current, size)
+}
+
+func GinGormPageBase(db *gorm.DB, data interface{}, current int, size int) (total int) {
+	lib.AssetsError(db.Model(data).Count(&total).Error)
+	lib.AssetsError(db.Offset((current - 1) * size).Limit(size).Find(data).Error)
+	return
 }
 
 type GinHelpHandlerFunc func(c *GinHelp)
@@ -79,6 +108,14 @@ func (sew ServerErrorIO) Write(p []byte) (n int, err error) {
 
 func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if page, err := strconv.Atoi(c.DefaultQuery(GinPage.PageKey, "1")); err == nil {
+			GinPage.Current = page
+		}
+
+		if pageSize, err := strconv.Atoi(c.DefaultQuery(GinPage.PageSizeKey, string(GinPage.PageSizeDefault))); err == nil {
+			GinPage.Size = pageSize
+		}
+
 		help := &GinHelp{c}
 		defer func(c *GinHelp) {
 			if err := recover(); err != nil {
@@ -97,12 +134,10 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 						}
 
 						md5 := lib.Md5(fmt.Sprintf("%d%s", time.Now().Unix(), errMsg))
-						buffer := new(bytes.Buffer)
-						buffer.WriteString(md5)
-						buffer.WriteString("-")
-						buffer.WriteString(errMsg)
-						ServerErrorWrite.Write(buffer.Bytes())
-						c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]interface{}{"msg": md5})
+						ServerErrorWrite.Write([]byte(lib.StringJoin(md5, "-", errMsg)))
+						c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]interface{}{
+							"msg": md5,
+						})
 					}
 				}
 			}
@@ -120,6 +155,13 @@ func Error() string {
 func (help *GinHelp) Response(code int, jsonObj interface{}) {
 	help.AbortWithStatusJSON(code, jsonObj)
 	panic(ResponseAbortError{})
+}
+
+func (help *GinHelp) ResourcePage(data interface{}, total int) {
+	help.Resource(H{
+		"data":  data,
+		"total": total,
+	})
 }
 
 func (help *GinHelp) Resource(data interface{}) {
