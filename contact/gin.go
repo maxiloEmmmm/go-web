@@ -89,14 +89,14 @@ func GinCors() gin.HandlerFunc {
 
 		origin := c.GetHeader("origin")
 		if lib.InArray(CorsConfig.AllowOrigin, "*") || lib.InArray(CorsConfig.AllowOrigin, origin) {
-			if method == "OPTIONS" {
-				c.AbortWithStatus(http.StatusNoContent)
-			}
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Headers", strings.Join(CorsConfig.AllowHeaders, ","))
 			c.Header("Access-Control-Allow-Methods", strings.Join(CorsConfig.AllowMethods, ","))
 			c.Header("Access-Control-Expose-Headers", strings.Join(CorsConfig.ExposeHeaders, ","))
 			c.Header("Access-Control-Allow-Credentials", lib.AssetsReturn(CorsConfig.AllowCredentials, "true", "false").(string))
+			if method == "OPTIONS" {
+				c.AbortWithStatus(http.StatusNoContent)
+			}
 		}
 		c.Next()
 	}
