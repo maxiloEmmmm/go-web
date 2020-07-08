@@ -87,7 +87,7 @@ func GinCors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
 
-		origin := c.GetHeader("origin")
+		origin := c.GetHeader("Origin")
 		if lib.InArray(CorsConfig.AllowOrigin, "*") || lib.InArray(CorsConfig.AllowOrigin, origin) {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Headers", strings.Join(CorsConfig.AllowHeaders, ","))
