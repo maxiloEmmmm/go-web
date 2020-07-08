@@ -2,10 +2,10 @@ package contact
 
 import (
 	"github.com/gin-gonic/gin"
+	lib "github.com/maxiloEmmmm/go-tool"
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -39,12 +39,7 @@ func (config *configIO) GetLogFile() (file *os.File) {
 			log.Fatalln("日志文件夹创建失败: " + err.Error())
 		}
 
-		buffer := new(strings.Builder)
-		buffer.WriteString(LogPath)
-		buffer.WriteString("/access_")
-		buffer.WriteString(key)
-		buffer.WriteString(".log")
-		file, err := os.OpenFile(buffer.String(), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(lib.StringJoin(LogPath, "/access_", key, ".log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 
 		if err != nil {
 			log.Fatalln("日志文件打开失败: " + err.Error())
