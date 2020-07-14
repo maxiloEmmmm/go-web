@@ -84,9 +84,6 @@ func GinCors() gin.HandlerFunc {
 }
 
 func InitOpenTracing() io.Closer {
-	if len(Config.OpenTracing.Service) == 0 {
-		Config.OpenTracing.Service = time.Now().Format("App-20060102150405999999999")
-	}
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = Config.OpenTracing.Service
 	cfg.Sampler.Type = Config.OpenTracing.Sampler.Type

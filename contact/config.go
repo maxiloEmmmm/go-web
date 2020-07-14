@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"time"
 )
 
 type ConfigMap struct {
@@ -65,7 +64,7 @@ var Config = ConfigMap{
 			LocalAgentHostPort string
 		}
 	}{
-		Service: time.Now().Format("App-20060102150405999999999"),
+		Service: "App",
 		Sampler: struct {
 			Type  string
 			Param float64
