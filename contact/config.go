@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"time"
 )
 
 type ConfigMap struct {
@@ -31,13 +32,54 @@ type ConfigMap struct {
 		Db       int
 		Password string
 	}
+
+	OpenTracing struct {
+		Service string
+		Sampler struct {
+			Type  string
+			Param float64
+		}
+		Reporter struct {
+			LogSpans           bool
+			LocalAgentHostPort string
+		}
+	}
 }
 
 var Config = ConfigMap{
 	App: struct {
 		Port int
 		Mode string
-	}{Port: 8000, Mode: "release"},
+	}{
+		Port: 8000,
+		Mode: "release",
+	},
+	OpenTracing: struct {
+		Service string
+		Sampler struct {
+			Type  string
+			Param float64
+		}
+		Reporter struct {
+			LogSpans           bool
+			LocalAgentHostPort string
+		}
+	}{
+		Service: time.Now().Format("App-20060102150405999999999"),
+		Sampler: struct {
+			Type  string
+			Param float64
+		}{
+			Type:  "const",
+			Param: 1,
+		}, Reporter: struct {
+			LogSpans           bool
+			LocalAgentHostPort string
+		}{
+			LogSpans:           false,
+			LocalAgentHostPort: "localhost:6831",
+		},
+	},
 }
 
 var ConfigPath = "./config.yml"
@@ -53,4 +95,18 @@ func InitConfig() {
 	if err != nil {
 		panic(fmt.Sprintf("解析配置失败: %s", err))
 	}
+}
+
+func ConfigFile(path string, dst interface{}) bool {
+	configFile, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return false
+	}
+
+	err = yaml.Unmarshal(configFile, dst)
+	if err != nil {
+		return false
+	}
+	return true
 }

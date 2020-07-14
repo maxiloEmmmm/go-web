@@ -2,20 +2,22 @@ package contact
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/gorm"
 	lib "github.com/maxiloEmmmm/go-tool"
+	"github.com/opentracing/opentracing-go"
+	"github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
-
-type GinHelp struct {
-	*gin.Context
-}
 
 type page struct {
 	Current         int
@@ -43,27 +45,6 @@ func GinGormPageBase(db *gorm.DB, data interface{}, current int, size int) (tota
 	lib.AssetsError(db.Model(data).Count(&total).Error)
 	lib.AssetsError(db.Offset((current - 1) * size).Limit(size).Find(data).Error)
 	return
-}
-
-type GinHelpHandlerFunc func(c *GinHelp)
-
-type H map[string]interface{}
-
-func GinRouteAuth() gin.HandlerFunc {
-	return GinHelpHandle(func(c *GinHelp) {
-		token := c.GetToken()
-
-		jwt := JwtNew()
-
-		jwt.SetSecret(Config.Jwt.Secret)
-
-		if err := jwt.ParseToken(token); err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
-		} else {
-			c.Set("auth", jwt)
-			c.Next()
-		}
-	})
 }
 
 type Cors struct {
@@ -102,6 +83,76 @@ func GinCors() gin.HandlerFunc {
 	}
 }
 
+func InitOpenTracing() io.Closer {
+	if len(Config.OpenTracing.Service) == 0 {
+		Config.OpenTracing.Service = time.Now().Format("App-20060102150405999999999")
+	}
+	cfg, err := jaegercfg.FromEnv()
+	cfg.ServiceName = Config.OpenTracing.Service
+	cfg.Sampler.Type = Config.OpenTracing.Sampler.Type
+	cfg.Sampler.Param = Config.OpenTracing.Sampler.Param
+	cfg.Reporter.LogSpans = Config.OpenTracing.Reporter.LogSpans
+	cfg.Reporter.LocalAgentHostPort = Config.OpenTracing.Reporter.LocalAgentHostPort
+
+	tracer, closer, err := cfg.NewTracer(jaegercfg.Logger(jaeger.StdLogger))
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+	}
+
+	opentracing.InitGlobalTracer(tracer)
+	return closer
+}
+
+func SpanWrap(key string, span opentracing.Span) opentracing.Span {
+	var s opentracing.Span
+	if span != nil {
+		s = opentracing.StartSpan(key, opentracing.ChildOf(span.Context()))
+	} else {
+		s = opentracing.StartSpan(key)
+	}
+
+	return s
+}
+
+func ClientSpanWrap(span opentracing.Span) *resty.Client {
+	client := resty.New()
+	client.OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
+		s := SpanWrap(request.Method, span)
+		s.SetTag("url", request.URL)
+		client.OnAfterResponse(func(client *resty.Client, response *resty.Response) error {
+			s.Finish()
+			return nil
+		})
+		opentracing.GlobalTracer().Inject(
+			s.Context(),
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(request.Header))
+		return nil
+	})
+	return client
+}
+
+func GinOpenTracing() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		closer := InitOpenTracing()
+		var serverSpan opentracing.Span
+		wireContext, err := opentracing.GlobalTracer().Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(c.Request.Header))
+		if err != nil {
+			serverSpan = opentracing.StartSpan("request")
+		} else {
+			serverSpan = opentracing.StartSpan("request", opentracing.ChildOf(wireContext))
+		}
+		c.Set("open-tracing.span", serverSpan)
+		defer func() {
+			serverSpan.Finish()
+			closer.Close()
+		}()
+		c.Next()
+	}
+}
+
 func InitGin() {
 	switch Config.App.Mode {
 	case "debug", "":
@@ -136,7 +187,8 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 			GinPage.Size = pageSize
 		}
 
-		help := &GinHelp{c}
+		help := &GinHelp{Context: c, AppContext: context.Background()}
+		help.AppContext = context.WithValue(help.AppContext, "app", help)
 		defer func(c *GinHelp) {
 			if err := recover(); err != nil {
 				switch err.(type) {
@@ -171,6 +223,49 @@ type ResponseAbortError struct{}
 
 func (r ResponseAbortError) Error() string {
 	return "abort"
+}
+
+type GinHelp struct {
+	*gin.Context
+	AppContext context.Context
+}
+
+type GinHelpHandlerFunc func(c *GinHelp)
+
+type H map[string]interface{}
+
+func GinRouteAuth() gin.HandlerFunc {
+	return GinHelpHandle(func(c *GinHelp) {
+		token := c.GetToken()
+
+		jwt := JwtNew()
+
+		jwt.SetSecret(Config.Jwt.Secret)
+
+		if err := jwt.ParseToken(token); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+		} else {
+			c.Set("auth", jwt)
+			c.Next()
+		}
+	})
+}
+
+func (help *GinHelp) SpanWrapWithApp(key string) opentracing.Span {
+	return SpanWrap(key, help.TracingSpan())
+}
+
+func (help *GinHelp) ClientSpanWrapWithApp() *resty.Client {
+	return ClientSpanWrap(help.TracingSpan())
+}
+
+func (help *GinHelp) TracingSpan() opentracing.Span {
+	if context, exist := help.Get("open-tracing.span"); exist {
+		return context.(opentracing.Span)
+	} else {
+
+		return nil
+	}
 }
 
 // 响应
