@@ -148,13 +148,19 @@ func GinOpenTracing() gin.HandlerFunc {
 	}
 }
 
+const (
+	DEBUG   = "deubg"
+	RELEASE = "release"
+	TEST    = "test"
+)
+
 func InitGin() {
 	switch Config.App.Mode {
-	case "debug", "":
+	case DEBUG:
 		gin.SetMode(gin.DebugMode)
-	case "release":
+	case RELEASE:
 		gin.SetMode(gin.ReleaseMode)
-	case "test":
+	case TEST:
 		gin.SetMode(gin.TestMode)
 	default:
 		gin.SetMode(gin.DebugMode)

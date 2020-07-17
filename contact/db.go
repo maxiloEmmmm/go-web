@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -47,7 +48,8 @@ func InitDB() {
 
 	Db.SingularTable(true)
 
-	Db.LogMode(true)
+	Db.LogMode(lib.InArray(&[]string{DEBUG, TEST}, Config.App.Mode))
+	Db.SetLogger(log.New(gin.DefaultWriter, "db", 0))
 
 	if err := Db.DB().Ping(); err != nil {
 		log.Fatalln(err)
