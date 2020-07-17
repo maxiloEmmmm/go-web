@@ -1,7 +1,6 @@
 package contact
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -90,13 +89,12 @@ func InitOpenTracing() io.Closer {
 	cfg.Sampler.Param = Config.OpenTracing.Sampler.Param
 	cfg.Reporter.LogSpans = Config.OpenTracing.Reporter.LogSpans
 	cfg.Reporter.LocalAgentHostPort = Config.OpenTracing.Reporter.LocalAgentHostPort
-
 	tracer, closer, err := cfg.NewTracer(jaegercfg.Logger(jaeger.StdLogger))
 	if err != nil {
-		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+		gin.DefaultWriter.Write([]byte(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err)))
+	} else {
+		opentracing.InitGlobalTracer(tracer)
 	}
-
-	opentracing.InitGlobalTracer(tracer)
 	return closer
 }
 
@@ -168,10 +166,10 @@ var ServerErrorWrite = new(ServerErrorIO)
 type ServerErrorIO struct{}
 
 func (sew ServerErrorIO) Write(p []byte) (n int, err error) {
-	buffer := new(bytes.Buffer)
-	buffer.Write([]byte("[SERVER_ERROR]:"))
+	buffer := new(strings.Builder)
+	buffer.WriteString("[SERVER_ERROR]:")
 	buffer.Write(p)
-	return gin.DefaultWriter.Write(buffer.Bytes())
+	return gin.DefaultWriter.Write([]byte(buffer.String()))
 }
 
 func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
@@ -204,6 +202,13 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 
 						md5 := lib.Md5(fmt.Sprintf("%d%s", time.Now().Unix(), errMsg))
 						ServerErrorWrite.Write([]byte(lib.StringJoin(md5, "-", errMsg)))
+						if span, exist := c.Get("open-tracing.span"); exist {
+							span.(opentracing.Span).LogKV(
+								"msg", errMsg,
+								"error_code", md5,
+							)
+							span.(opentracing.Span).SetTag("status", "error")
+						}
 						c.AbortWithStatusJSON(http.StatusUnprocessableEntity, H{
 							"code":    "server",
 							"message": md5,
@@ -240,7 +245,7 @@ func GinRouteAuth() gin.HandlerFunc {
 		jwt.SetSecret(Config.Jwt.Secret)
 
 		if err := jwt.ParseToken(token); err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+			c.InValidError("auth:token:parse", err)
 		} else {
 			c.Set("auth", jwt)
 			c.Next()
@@ -294,7 +299,7 @@ func (help *GinHelp) ResourceDelete() {
 	help.Response(http.StatusNoContent, "")
 }
 
-// 资源丢失响应
+// 资源丢失响应 不推荐使用 太过于底层 推荐InValid*
 func (help *GinHelp) ResourceNotFound() {
 	help.Response(http.StatusNotFound, "")
 }
