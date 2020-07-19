@@ -82,7 +82,7 @@ func GinCors() gin.HandlerFunc {
 	}
 }
 
-func InitOpenTracing() io.Closer {
+func InitOpenTracing() (opentracing.Tracer, io.Closer) {
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = Config.OpenTracing.Service
 	cfg.Sampler.Type = Config.OpenTracing.Sampler.Type
@@ -92,33 +92,33 @@ func InitOpenTracing() io.Closer {
 	tracer, closer, err := cfg.NewTracer(jaegercfg.Logger(jaeger.StdLogger))
 	if err != nil {
 		gin.DefaultWriter.Write([]byte(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err)))
-	} else {
-		opentracing.InitGlobalTracer(tracer)
 	}
-	return closer
+
+	// opentracing.setGlobalTracer is singleton, not better
+	return tracer, closer
 }
 
-func SpanWrap(key string, span opentracing.Span) opentracing.Span {
+func SpanWrap(tracer opentracing.Tracer, key string, span opentracing.Span) opentracing.Span {
 	var s opentracing.Span
 	if span != nil {
-		s = opentracing.StartSpan(key, opentracing.ChildOf(span.Context()))
+		s = tracer.StartSpan(key, opentracing.ChildOf(span.Context()))
 	} else {
-		s = opentracing.StartSpan(key)
+		s = tracer.StartSpan(key)
 	}
 
 	return s
 }
 
-func ClientSpanWrap(span opentracing.Span) *resty.Client {
+func ClientSpanWrap(tracer opentracing.Tracer, span opentracing.Span) *resty.Client {
 	client := resty.New()
 	client.OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
-		s := SpanWrap(request.Method, span)
+		s := SpanWrap(tracer, request.Method, span)
 		s.SetTag("url", request.URL)
 		client.OnAfterResponse(func(client *resty.Client, response *resty.Response) error {
 			s.Finish()
 			return nil
 		})
-		opentracing.GlobalTracer().Inject(
+		tracer.Inject(
 			s.Context(),
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(request.Header))
@@ -129,17 +129,18 @@ func ClientSpanWrap(span opentracing.Span) *resty.Client {
 
 func GinOpenTracing() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		closer := InitOpenTracing()
+		tracer, closer := InitOpenTracing()
 		var serverSpan opentracing.Span
-		wireContext, err := opentracing.GlobalTracer().Extract(
+		wireContext, err := tracer.Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(c.Request.Header))
 		if err != nil {
-			serverSpan = opentracing.StartSpan("request")
+			serverSpan = tracer.StartSpan("request")
 		} else {
-			serverSpan = opentracing.StartSpan("request", opentracing.ChildOf(wireContext))
+			serverSpan = tracer.StartSpan("request", opentracing.ChildOf(wireContext))
 		}
 		c.Set("open-tracing.span", serverSpan)
+		c.Set("open-tracing.tracer", tracer)
 		defer func() {
 			serverSpan.Finish()
 			closer.Close()
@@ -148,19 +149,13 @@ func GinOpenTracing() gin.HandlerFunc {
 	}
 }
 
-const (
-	DEBUG   = "deubg"
-	RELEASE = "release"
-	TEST    = "test"
-)
-
 func InitGin() {
 	switch Config.App.Mode {
-	case DEBUG:
+	case gin.DebugMode:
 		gin.SetMode(gin.DebugMode)
-	case RELEASE:
+	case gin.ReleaseMode:
 		gin.SetMode(gin.ReleaseMode)
-	case TEST:
+	case gin.TestMode:
 		gin.SetMode(gin.TestMode)
 	default:
 		gin.SetMode(gin.DebugMode)
@@ -215,10 +210,7 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 							)
 							span.(opentracing.Span).SetTag("status", "error")
 						}
-						c.AbortWithStatusJSON(http.StatusUnprocessableEntity, H{
-							"code":    "server",
-							"message": md5,
-						})
+						c.AbortWithStatusJSON(http.StatusUnprocessableEntity, InValidFunc("server", md5))
 					}
 				}
 			}
@@ -260,16 +252,25 @@ func GinRouteAuth() gin.HandlerFunc {
 }
 
 func (help *GinHelp) SpanWrapWithApp(key string) opentracing.Span {
-	return SpanWrap(key, help.TracingSpan())
+	return SpanWrap(help.TracingTracer(), key, help.TracingSpan())
 }
 
 func (help *GinHelp) ClientSpanWrapWithApp() *resty.Client {
-	return ClientSpanWrap(help.TracingSpan())
+	return ClientSpanWrap(help.TracingTracer(), help.TracingSpan())
 }
 
 func (help *GinHelp) TracingSpan() opentracing.Span {
 	if context, exist := help.Get("open-tracing.span"); exist {
 		return context.(opentracing.Span)
+	} else {
+
+		return nil
+	}
+}
+
+func (help *GinHelp) TracingTracer() opentracing.Tracer {
+	if context, exist := help.Get("open-tracing.tracer"); exist {
+		return context.(opentracing.Tracer)
 	} else {
 
 		return nil
@@ -310,12 +311,20 @@ func (help *GinHelp) ResourceNotFound() {
 	help.Response(http.StatusNotFound, "")
 }
 
+type GinInValidFunc func(code string, message string) interface{}
+
+var InValidFunc GinInValidFunc = defaultInValidFunc
+
+var defaultInValidFunc GinInValidFunc = func(code string, message string) interface{} {
+	return H{
+		"code":    code,
+		"message": message,
+	}
+}
+
 // 客户端错误响应
 func (help *GinHelp) InValid(code string, msg string) {
-	help.Response(http.StatusUnprocessableEntity, H{
-		"code":    code,
-		"message": msg,
-	})
+	help.Response(http.StatusUnprocessableEntity, InValidFunc(code, msg))
 }
 
 // 断言客户端错误

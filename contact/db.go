@@ -48,7 +48,7 @@ func InitDB() {
 
 	Db.SingularTable(true)
 
-	Db.LogMode(lib.InArray(&[]string{DEBUG, TEST}, Config.App.Mode))
+	Db.LogMode(lib.InArray(&[]string{gin.DebugMode, gin.TestMode}, Config.App.Mode))
 	Db.SetLogger(log.New(gin.DefaultWriter, "db", 0))
 
 	if err := Db.DB().Ping(); err != nil {
