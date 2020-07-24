@@ -8,6 +8,7 @@ import (
 
 type ConfigMap struct {
 	Database struct {
+		Engine   string
 		Host     string
 		Port     int
 		Prefix   string
@@ -46,6 +47,15 @@ type ConfigMap struct {
 }
 
 var Config = ConfigMap{
+	Database: struct {
+		Engine   string
+		Host     string
+		Port     int
+		Prefix   string
+		Database string
+		Username string
+		Password string
+	}{Engine: "mysql"},
 	App: struct {
 		Port int
 		Mode string

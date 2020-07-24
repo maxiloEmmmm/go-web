@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	lib "github.com/maxiloEmmmm/go-tool"
 	"log"
 )
@@ -28,7 +26,12 @@ func CustomerTableName(table string) string {
 
 func InitDB() {
 	var err error
-	Db, err = gorm.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+
+	if lib.InArray(&[]string{"mysql", "mssql", "sqlite", "postgres"}, Config.Database.Engine) {
+		Config.Database.Engine = "mysql"
+	}
+
+	Db, err = gorm.Open(Config.Database.Engine, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		Config.Database.Username,
 		Config.Database.Password,
 		Config.Database.Host,
