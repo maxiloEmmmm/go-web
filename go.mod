@@ -11,9 +11,8 @@ require (
 	github.com/go-playground/validator/v10 v10.3.0
 	github.com/go-redis/redis/v8 v8.0.0-beta.5
 	github.com/go-resty/resty/v2 v2.3.0
-	github.com/go-sql-driver/mysql v1.5.0
 	github.com/jinzhu/gorm v1.9.14
-	github.com/maxiloEmmmm/go-tool v0.0.5
+	github.com/maxiloEmmmm/go-tool v0.0.6
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/uber/jaeger-client-go v2.24.0+incompatible
