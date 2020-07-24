@@ -3,7 +3,6 @@ package contact
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	lib "github.com/maxiloEmmmm/go-tool"
@@ -31,12 +30,7 @@ func InitDB() {
 		Config.Database.Engine = "mysql"
 	}
 
-	Db, err = gorm.Open(Config.Database.Engine, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-		Config.Database.Username,
-		Config.Database.Password,
-		Config.Database.Host,
-		Config.Database.Port,
-		Config.Database.Database))
+	Db, err = gorm.Open(Config.Database.Engine, Config.Database.Source)
 
 	if err != nil {
 		log.Fatalln(err)
