@@ -26,7 +26,7 @@ func CustomerTableName(table string) string {
 func InitDB() {
 	var err error
 
-	if !lib.InArray(&[]string{"mysql", "mssql", "sqlite", "postgres"}, Config.Database.Engine) {
+	if !lib.InArray(&[]string{"mysql", "mssql", "sqlite3", "postgres"}, Config.Database.Engine) {
 		Config.Database.Engine = "mysql"
 	}
 
