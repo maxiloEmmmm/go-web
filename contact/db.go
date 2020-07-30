@@ -1,6 +1,7 @@
 package contact
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
@@ -59,7 +60,16 @@ type BoolField struct {
 
 func (b *BoolField) Scan(value interface{}) error {
 	// todo: test db field type for tinyint mediumInt
-	if value == nil || value.(int64) == 1 {
+	if value == nil {
+		b.Bool = false
+	}
+
+	val := sql.NullInt64{}
+	err := val.Scan(value)
+	if err != nil {
+		return err
+	}
+	if val.Int64 == 1 {
 		b.Bool = false
 	} else {
 		b.Bool = true
