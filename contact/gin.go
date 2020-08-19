@@ -19,21 +19,40 @@ import (
 )
 
 type page struct {
-	Current         int
-	Size            int
 	PageKey         string
 	PageSizeKey     string
 	PageSizeDefault int
+	CurrentDefault  int
 }
 
-var GinPage = page{Current: 1, Size: 10, PageKey: "page", PageSizeKey: "page_size", PageSizeDefault: 15}
-
-func GinGormPageHelp(db *gorm.DB, data interface{}) int {
-	return GinGormPageBase(db, data, GinPage.Current, GinPage.Size)
+type pageInfo struct {
+	Current int
+	Size    int
 }
 
-func GinGormPageHelpWithOptionSize(db *gorm.DB, data interface{}, size int) int {
-	return GinGormPageBase(db, data, GinPage.Current, size)
+var GinPage = page{PageKey: "page", PageSizeKey: "page_size", PageSizeDefault: 15, CurrentDefault: 1}
+
+func (help *GinHelp) GetPageINfo() pageInfo {
+	var gp pageInfo
+	if val, exist := help.Get("page"); exist {
+		gp = val.(pageInfo)
+	} else {
+		gp = pageInfo{
+			Current: GinPage.CurrentDefault,
+			Size:    GinPage.PageSizeDefault,
+		}
+	}
+	return gp
+}
+
+func (help *GinHelp) GinGormPageHelp(db *gorm.DB, data interface{}) int {
+	var gp = help.GetPageINfo()
+	return GinGormPageBase(db, data, gp.Current, gp.Size)
+}
+
+func (help *GinHelp) GinGormPageHelpWithOptionSize(db *gorm.DB, data interface{}, size int) int {
+	var gp = help.GetPageINfo()
+	return GinGormPageBase(db, data, gp.Current, size)
 }
 
 func GinGormPageHelpWithOption(db *gorm.DB, data interface{}, current int, size int) int {
@@ -175,13 +194,17 @@ func (sew ServerErrorIO) Write(p []byte) (n int, err error) {
 
 func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		gp := pageInfo{Current: 1, Size: 10}
+
 		if page, err := strconv.Atoi(c.DefaultQuery(GinPage.PageKey, "1")); err == nil {
-			GinPage.Current = page
+			gp.Current = page
 		}
 
 		if pageSize, err := strconv.Atoi(c.DefaultQuery(GinPage.PageSizeKey, string(GinPage.PageSizeDefault))); err == nil {
-			GinPage.Size = pageSize
+			gp.Size = pageSize
 		}
+
+		c.Set("page", gp)
 
 		help := &GinHelp{Context: c, AppContext: context.Background()}
 		help.AppContext = context.WithValue(help.AppContext, "app", help)
