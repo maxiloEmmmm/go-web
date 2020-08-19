@@ -32,7 +32,7 @@ type pageInfo struct {
 
 var GinPage = page{PageKey: "page", PageSizeKey: "page_size", PageSizeDefault: 15, CurrentDefault: 1}
 
-func (help *GinHelp) GetPageINfo() pageInfo {
+func (help *GinHelp) GetPageInfo() pageInfo {
 	var gp pageInfo
 	if val, exist := help.Get("page"); exist {
 		gp = val.(pageInfo)
@@ -46,12 +46,12 @@ func (help *GinHelp) GetPageINfo() pageInfo {
 }
 
 func (help *GinHelp) GinGormPageHelp(db *gorm.DB, data interface{}) int {
-	var gp = help.GetPageINfo()
+	var gp = help.GetPageInfo()
 	return GinGormPageBase(db, data, gp.Current, gp.Size)
 }
 
 func (help *GinHelp) GinGormPageHelpWithOptionSize(db *gorm.DB, data interface{}, size int) int {
-	var gp = help.GetPageINfo()
+	var gp = help.GetPageInfo()
 	return GinGormPageBase(db, data, gp.Current, size)
 }
 
