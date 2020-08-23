@@ -37,7 +37,7 @@ type Body struct {
 }
 
 // ref: https://developer.github.com/v3/#http-verbs
-func CURD(r *gin.Engine, prefix string, model Model) {
+func CURD(r *gin.Engine, prefix string, model Model) *gin.RouterGroup {
 	g := r.Group(go_tool.StringJoin("/", prefix))
 
 	g.GET("", GinHelpHandle(func(c *GinHelp) {
@@ -100,6 +100,7 @@ func CURD(r *gin.Engine, prefix string, model Model) {
 	}))
 
 	//put is miss..... hhhhh
+	return g
 }
 
 type GORMM struct {
