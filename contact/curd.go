@@ -109,7 +109,7 @@ type GORMM struct {
 	context.Context
 }
 
-func (g GORMM) SetContext(ctx context.Context) {
+func (g *GORMM) SetContext(ctx context.Context) {
 	g.Context = ctx
 }
 
