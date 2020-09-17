@@ -2,9 +2,7 @@ package contact
 
 import (
 	"context"
-	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	go_tool "github.com/maxiloEmmmm/go-tool"
 	"reflect"
 )
@@ -103,101 +101,115 @@ func CURD(r *gin.Engine, prefix string, model Model) *gin.RouterGroup {
 	return g
 }
 
-type GORMM struct {
-	ResolveOne  func() interface{}
-	ResolveList func() interface{}
-	UsePage     bool
-	context.Context
-}
-
-func (g *GORMM) SetContext(ctx context.Context) {
-	g.Context = ctx
-}
-
-func (g GORMM) PageHelp(db *gorm.DB, data interface{}) int {
-	return g.Context.Value("app").(*GinHelp).GinGormPageHelp(db, data)
-}
-
-func (g GORMM) List(where interface{}) (interface{}, int, error) {
-	items := g.ResolveList()
-
-	if !isSlice(items) {
-		return nil, 0, errors.New("data collection not slice")
-	}
-
-	total := 0
-
-	db := Db
-	if where != nil {
-		db = db.Where(where)
-	}
-	if g.UsePage {
-		total = g.PageHelp(db, items)
-	} else {
-		go_tool.AssetsError(db.Find(items).Error)
-		total = reflect.ValueOf(items).Elem().Len()
-	}
-
-	return items, total, nil
-}
-
-func (g GORMM) Get(id string) (interface{}, error) {
-	item := g.ResolveOne()
-
-	if !isPtr(item) {
-		return nil, errors.New("data collection not ptr")
-	}
-	if err := Db.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-		return nil, errors.New("not found")
-	} else {
-		go_tool.AssetsError(err)
-	}
-	return item, nil
-}
-
-func (g GORMM) PrimaryKey() string {
-	return "id"
-}
-
-func (g GORMM) Create(data interface{}) (interface{}, error) {
-	item := g.ResolveOne()
-
-	if !isPtr(item) {
-		return nil, errors.New("data collection not ptr")
-	}
-
-	go_tool.AssetsError(Db.Create(data).Error)
-	return data, nil
-}
-
-func (g GORMM) Delete(id string) error {
-	item := g.ResolveOne()
-
-	if !isPtr(item) {
-		return errors.New("data collection not ptr")
-	}
-
-	if err := Db.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-		return errors.New("not found")
-	} else {
-		go_tool.AssetsError(err)
-	}
-	go_tool.AssetsError(Db.Delete(item).Error)
-	return nil
-}
-
-func (g GORMM) Patch(id string, data interface{}) error {
-	item := g.ResolveOne()
-
-	if !isPtr(item) {
-		return errors.New("data collection not ptr")
-	}
-
-	if err := Db.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-		return errors.New("not found")
-	} else {
-		go_tool.AssetsError(err)
-	}
-	go_tool.AssetsError(Db.Model(item).Updates(data).Error)
-	return nil
-}
+// wait implement
+//type Orm interface {
+//	Where(interface{}) Orm
+//	All() interface{}
+//	First() interface{}
+//	Fill(create bool) interface{}
+//	Create(interface{}) (interface{}, error)
+//	Delete(interface{}) error
+//	PrimaryKey() string
+//	SetContext(ctx context.Context)
+//	Pagination() (interface{}, int)
+//	PageHelp(current int, size int) interface{}
+//}
+//
+//type OrmM struct {
+//	ResolveOne  func() interface{}
+//	ResolveList func() interface{}
+//	UsePage     bool
+//	context.Context
+//	Orm
+//}
+//
+//func (g *OrmM) SetContext(ctx context.Context) {
+//	g.Context = ctx
+//}
+//
+//func (g OrmM) PageHelp() interface{} {
+//	return g.Context.Value("app").(*GinHelp).GinPageHelp(g.Orm.PageHelp)
+//}
+//
+//func (g OrmM) List(where interface{}) (interface{}, int, error) {
+//	items := g.ResolveList()
+//
+//	if !isSlice(items) {
+//		return nil, 0, errors.New("data collection not slice")
+//	}
+//
+//	total := 0
+//
+//	db := g.Orm
+//	if where != nil {
+//		db.Where(where)
+//	}
+//	if g.UsePage {
+//		items, total = g.PageHelp().(Orm).Pagination()
+//	} else {
+//		items := g.Orm.All()
+//		total = reflect.ValueOf(items).Elem().Len()
+//	}
+//
+//	return items, total, nil
+//}
+//
+//func (g OrmM) Get(id string) (interface{}, error) {
+//	item := g.ResolveOne()
+//
+//	if !isPtr(item) {
+//		return nil, errors.New("data collection not ptr")
+//	}
+//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
+//		return nil, errors.New("not found")
+//	} else {
+//		go_tool.AssetsError(err)
+//	}
+//	return item, nil
+//}
+//
+//func (g OrmM) PrimaryKey() string {
+//	return "id"
+//}
+//
+//func (g OrmM) Create(data interface{}) (interface{}, error) {
+//	item := g.ResolveOne()
+//
+//	if !isPtr(item) {
+//		return nil, errors.New("data collection not ptr")
+//	}
+//
+//	return g.Orm.Create(data)
+//}
+//
+//func (g OrmM) Delete(id string) error {
+//	item := g.ResolveOne()
+//
+//	if !isPtr(item) {
+//		return errors.New("data collection not ptr")
+//	}
+//
+//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
+//		return errors.New("not found")
+//	} else {
+//		go_tool.AssetsError(err)
+//	}
+//	go_tool.AssetsError(g.Orm.Delete(item))
+//	return nil
+//}
+//
+//func (g OrmM) Patch(id string, data interface{}) error {
+//	item := g.ResolveOne()
+//
+//	if !isPtr(item) {
+//		return errors.New("data collection not ptr")
+//	}
+//
+//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
+//		return errors.New("not found")
+//	} else {
+//		go_tool.AssetsError(err)
+//	}
+//	go_tool.AssetsError(Db.Model(item).Updates(data).Error)
+//	return nil
+//}

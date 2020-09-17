@@ -7,11 +7,7 @@ import (
 )
 
 type ConfigMap struct {
-	Database struct {
-		Engine string
-		Source string
-		Prefix string
-	}
+	Database map[string]map[string]interface{}
 
 	Jwt struct {
 		Secret string
@@ -43,11 +39,6 @@ type ConfigMap struct {
 }
 
 var Config = ConfigMap{
-	Database: struct {
-		Engine string
-		Source string
-		Prefix string
-	}{Engine: "mysql"},
 	App: struct {
 		Port int
 		Mode string
