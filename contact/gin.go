@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
-	"github.com/jinzhu/gorm"
 	lib "github.com/maxiloEmmmm/go-tool"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -45,24 +44,20 @@ func (help *GinHelp) GetPageInfo() pageInfo {
 	return gp
 }
 
-func (help *GinHelp) GinGormPageHelp(db *gorm.DB, data interface{}) int {
+type GinDataEnginePageHelp func(current int, size int) interface{}
+
+func (help *GinHelp) GinPageHelp(cb GinDataEnginePageHelp) interface{} {
 	var gp = help.GetPageInfo()
-	return GinGormPageBase(db, data, gp.Current, gp.Size)
+	return GinPageBase(cb, gp.Current, gp.Size)
 }
 
-func (help *GinHelp) GinGormPageHelpWithOptionSize(db *gorm.DB, data interface{}, size int) int {
+func (help *GinHelp) GinPageHelpWithOptionSize(cb GinDataEnginePageHelp, size int) interface{} {
 	var gp = help.GetPageInfo()
-	return GinGormPageBase(db, data, gp.Current, size)
+	return GinPageBase(cb, gp.Current, size)
 }
 
-func GinGormPageHelpWithOption(db *gorm.DB, data interface{}, current int, size int) int {
-	return GinGormPageBase(db, data, current, size)
-}
-
-func GinGormPageBase(db *gorm.DB, data interface{}, current int, size int) (total int) {
-	lib.AssetsError(db.Model(data).Count(&total).Error)
-	lib.AssetsError(db.Offset((current - 1) * size).Limit(size).Find(data).Error)
-	return
+func GinPageBase(cb GinDataEnginePageHelp, current int, size int) interface{} {
+	return cb(current, size)
 }
 
 type Cors struct {

@@ -4,54 +4,40 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"errors"
 	lib "github.com/maxiloEmmmm/go-tool"
 	"log"
 )
 
-var (
-	Db *gorm.DB
-)
-
-type ScopeFunction func(db *gorm.DB) *gorm.DB
-
-func DbClose() error {
-	return Db.Close()
-}
-
-func CustomerTableName(table string) string {
-	return lib.StringJoin(Config.Database.Prefix, table)
-}
-
-func InitDB() {
-	var err error
-
-	if !lib.InArray(&[]string{"mysql", "mssql", "sqlite3", "postgres"}, Config.Database.Engine) {
-		Config.Database.Engine = "mysql"
+func InitDB(mode string) *sql.DB {
+	if mode == "" {
+		mode = Config.App.Mode
 	}
 
-	Db, err = gorm.Open(Config.Database.Engine, Config.Database.Source)
+	if cfg, exist := Config.Database[mode]; exist {
+		engine := cfg["engine"]
+		if !lib.InArray(&[]string{"mysql", "mssql", "sqlite3", "postgres"}, engine) {
+			engine = "mysql"
+		}
 
-	if err != nil {
-		log.Fatalln(err)
+		db, err := sql.Open(engine.(string), cfg["source"].(string))
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		db.SetMaxIdleConns(20)
+		db.SetMaxOpenConns(100)
+
+		if err := db.Ping(); err != nil {
+			log.Fatalln(err)
+		}
+
+		return db
+
 	}
 
-	Db.DB().SetMaxIdleConns(20)
-	Db.DB().SetMaxOpenConns(100)
-
-	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		return lib.StringJoin(Config.Database.Prefix, defaultTableName)
-	}
-
-	Db.SingularTable(true)
-
-	Db.LogMode(lib.InArray(&[]string{gin.DebugMode, gin.TestMode}, Config.App.Mode))
-	Db.SetLogger(log.New(gin.DefaultWriter, "db", 0))
-
-	if err := Db.DB().Ping(); err != nil {
-		log.Fatalln(err)
-	}
+	log.Fatalln(errors.New("db mode not find"))
+	return nil
 }
 
 type BoolField struct {
@@ -59,7 +45,6 @@ type BoolField struct {
 }
 
 func (b *BoolField) Scan(value interface{}) error {
-	// todo: test db field type for tinyint mediumInt
 	if value == nil {
 		b.Bool = false
 	}
