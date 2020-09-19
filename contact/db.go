@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-func InitDB(mode string) *sql.DB {
+func InitDB(open func(string, string) (*sql.DB, error), mode string) {
 	if mode == "" {
 		mode = Config.App.Mode
 	}
@@ -20,7 +20,7 @@ func InitDB(mode string) *sql.DB {
 			engine = "mysql"
 		}
 
-		db, err := sql.Open(engine.(string), cfg["source"].(string))
+		db, err := open(engine.(string), cfg["source"].(string))
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -31,13 +31,9 @@ func InitDB(mode string) *sql.DB {
 		if err := db.Ping(); err != nil {
 			log.Fatalln(err)
 		}
-
-		return db
-
+	} else {
+		log.Fatalln(errors.New("db mode not find"))
 	}
-
-	log.Fatalln(errors.New("db mode not find"))
-	return nil
 }
 
 type BoolField struct {
