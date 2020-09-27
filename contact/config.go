@@ -25,6 +25,11 @@ type ConfigMap struct {
 		Password string
 	}
 
+	Log struct {
+		Type string
+		Info map[string]string
+	}
+
 	OpenTracing struct {
 		Service string
 		Sampler struct {
@@ -72,6 +77,12 @@ var Config = ConfigMap{
 			LocalAgentHostPort: "localhost:6831",
 		},
 	},
+	Log: struct {
+		Type string
+		Info map[string]string
+	}{Type: "file", Info: map[string]string{
+		"path": "logs",
+	}},
 }
 
 var ConfigPath = "./config.yml"

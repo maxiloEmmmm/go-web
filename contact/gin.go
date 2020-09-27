@@ -44,20 +44,20 @@ func (help *GinHelp) GetPageInfo() pageInfo {
 	return gp
 }
 
-type GinDataEnginePageHelp func(current int, size int) interface{}
+type GinDataEnginePageHelp func(start int, size int) (interface{}, int)
 
-func (help *GinHelp) GinPageHelp(cb GinDataEnginePageHelp) interface{} {
+func (help *GinHelp) GinPageHelp(cb GinDataEnginePageHelp) (interface{}, int) {
 	var gp = help.GetPageInfo()
 	return GinPageBase(cb, gp.Current, gp.Size)
 }
 
-func (help *GinHelp) GinPageHelpWithOptionSize(cb GinDataEnginePageHelp, size int) interface{} {
+func (help *GinHelp) GinPageHelpWithOptionSize(cb GinDataEnginePageHelp, size int) (interface{}, int) {
 	var gp = help.GetPageInfo()
 	return GinPageBase(cb, gp.Current, size)
 }
 
-func GinPageBase(cb GinDataEnginePageHelp, current int, size int) interface{} {
-	return cb(current, size)
+func GinPageBase(cb GinDataEnginePageHelp, current int, size int) (interface{}, int) {
+	return cb((current-1)*size, size)
 }
 
 type Cors struct {
