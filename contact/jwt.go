@@ -124,6 +124,9 @@ func (j *JwtLib) ForgetToken() {
 }
 
 func IsForgetToken(token string) (int64, bool) {
+	if RedisClient == nil {
+		return 0, false
+	}
 	cmd := RedisClient.Get(context.Background(), lib.StringJoin("jwt_forget:", token))
 	if cmd.Err() != nil {
 		return 0, false

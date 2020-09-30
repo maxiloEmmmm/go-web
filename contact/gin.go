@@ -12,6 +12,7 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -302,9 +303,14 @@ func (help *GinHelp) Response(code int, jsonObj interface{}) {
 }
 
 // 分页响应辅助
-func (help *GinHelp) ResourcePage(data interface{}, total int) {
+func (help *GinHelp) ResourcePage(cb GinDataEnginePageHelp) {
+	data, total := help.GinPageHelp(func(start int, size int) (interface{}, int) {
+		return cb(start, size)
+	})
+
+	v := reflect.ValueOf(data)
 	help.Resource(H{
-		"data":  data,
+		"data":  lib.AssetsReturn(v.IsNil(), []string{}, data),
 		"total": total,
 	})
 }
@@ -414,6 +420,10 @@ func (help *GinHelp) GetToken() string {
 
 	if len(token) == 0 {
 		token, _ = help.GetQuery("token")
+	}
+
+	if strings.HasPrefix(token, "Bearer") {
+		token = strings.Split(token, " ")[1]
 	}
 
 	return token

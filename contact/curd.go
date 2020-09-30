@@ -8,7 +8,7 @@ import (
 )
 
 type Model interface {
-	List(interface{}) (interface{}, int, error)
+	List(interface{}, int, int) (interface{}, int, error)
 	Get(string) (interface{}, error)
 	Patch(string, interface{}) error
 	Fill(create bool) interface{}
@@ -39,10 +39,13 @@ func CURD(r *gin.Engine, prefix string, model Model) *gin.RouterGroup {
 	g := r.Group(go_tool.StringJoin("/", prefix))
 
 	g.GET("", GinHelpHandle(func(c *GinHelp) {
-		model.SetContext(c.AppContext)
-		items, total, err := model.List(nil)
-		c.AssetsInValid("list", err)
-		c.ResourcePage(items, total)
+
+		c.ResourcePage(func(start int, size int) (interface{}, int) {
+			model.SetContext(c.AppContext)
+			items, total, err := model.List(nil, start, size)
+			c.AssetsInValid("list", err)
+			return items, total
+		})
 	}))
 
 	g.GET("/:id", GinHelpHandle(func(c *GinHelp) {

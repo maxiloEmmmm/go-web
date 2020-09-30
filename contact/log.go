@@ -92,7 +92,7 @@ func (li *LogInfo) Log(code string, message string) *LogInfo {
 	li.Code = code
 	li.Message = message
 	li.Time = time.Now().Format("2006-01-02 15:04:05.000")
-	fmt.Fprint(os.Stdout, li.RawString())
+	fmt.Fprintf(os.Stdout, "%s\n", li.RawString())
 	configInstance.Write([]byte(li.String()))
 	return li
 }
@@ -103,7 +103,7 @@ func LogLog(level string, code string, message string) {
 		Code:    code,
 		Time:    time.Now().Format("2006-01-02 15:04:05.000"),
 		Level:   level,
-	}).String())
+	}).RawString())
 }
 
 type SystemAdapter struct{}
