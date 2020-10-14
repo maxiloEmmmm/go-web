@@ -1,218 +1,225 @@
 package contact
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	go_tool "github.com/maxiloEmmmm/go-tool"
 	"reflect"
+	"strings"
 )
 
-type Model interface {
-	List(interface{}, int, int) (interface{}, int, error)
-	Get(string) (interface{}, error)
-	Patch(string, interface{}) error
-	Fill(create bool) interface{}
-	Create(interface{}) (interface{}, error)
-	Delete(string) error
-	PrimaryKey() string
-	SetContext(ctx context.Context)
+type CURDOption struct {
+	CreateFields []string
+	UpdateFields []string
+	Model        interface{}
+	Instance     interface{}
+	Prefix       string
+	IdTransfer   func(string) reflect.Value
 }
 
-func isPtr(s interface{}) bool {
-	return reflect.ValueOf(s).Kind() == reflect.Ptr
+type curd struct {
+	Option CURDOption
 }
 
-func isSlice(s interface{}) bool {
-	v := reflect.ValueOf(s)
-	if v.Kind() == reflect.Ptr {
-		return v.Elem().Kind() == reflect.Slice
+func NewEntCurd(option CURDOption) *curd {
+	if option.UpdateFields == nil {
+		option.UpdateFields = option.CreateFields
 	}
-	return v.Kind() == reflect.Slice
+	return &curd{option}
 }
 
-type Body struct {
-	Payload interface{}
-}
+func (c *curd) Route(r *gin.Engine) *gin.RouterGroup {
+	if !strings.HasPrefix("/", c.Option.Prefix) {
+		c.Option.Prefix = go_tool.StringJoin("/", c.Option.Prefix)
+	}
+	g := r.Group(c.Option.Prefix)
 
-// ref: https://developer.github.com/v3/#http-verbs
-func CURD(r *gin.Engine, prefix string, model Model) *gin.RouterGroup {
-	g := r.Group(go_tool.StringJoin("/", prefix))
-
-	g.GET("", GinHelpHandle(func(c *GinHelp) {
-
-		c.ResourcePage(func(start int, size int) (interface{}, int) {
-			model.SetContext(c.AppContext)
-			items, total, err := model.List(nil, start, size)
-			c.AssetsInValid("list", err)
-			return items, total
-		})
+	g.GET("", GinHelpHandle(func(help *GinHelp) {
+		c.curdList(help)
+	}))
+	g.GET("/:id", GinHelpHandle(func(help *GinHelp) {
+		c.curdOne(help)
+	}))
+	g.POST("", GinHelpHandle(func(help *GinHelp) {
+		c.curdPost(help)
+	}))
+	g.PATCH("/:id", GinHelpHandle(func(help *GinHelp) {
+		c.curdPatch(help)
+	}))
+	g.DELETE("/:id", GinHelpHandle(func(help *GinHelp) {
+		c.curdDelete(help)
 	}))
 
-	g.GET("/:id", GinHelpHandle(func(c *GinHelp) {
-		model.SetContext(c.AppContext)
-		uri := struct {
-			Id string `uri:"id"`
-		}{}
-
-		c.InValidBindUri(&uri)
-
-		item, err := model.Get(uri.Id)
-		c.AssetsInValid("get", err)
-		c.Resource(item)
-	}))
-
-	g.POST("", GinHelpHandle(func(c *GinHelp) {
-		model.SetContext(c.AppContext)
-		fill := model.Fill(true)
-		body := &Body{Payload: fill}
-		c.InValidBind(body)
-
-		item, err := model.Create(body.Payload)
-		c.AssetsInValid("patch", err)
-		c.ResourceCreate(item)
-	}))
-
-	g.PATCH("/:id", GinHelpHandle(func(c *GinHelp) {
-		model.SetContext(c.AppContext)
-		uri := struct {
-			Id string `uri:"id"`
-		}{}
-
-		c.InValidBindUri(&uri)
-
-		fill := model.Fill(false)
-		body := &Body{Payload: fill}
-		c.InValidBind(body)
-
-		c.AssetsInValid("patch", model.Patch(uri.Id, body.Payload))
-		c.Resource(nil)
-	}))
-
-	g.DELETE("/:id", GinHelpHandle(func(c *GinHelp) {
-		model.SetContext(c.AppContext)
-		uri := struct {
-			Id string `uri:"id"`
-		}{}
-
-		c.InValidBindUri(&uri)
-
-		c.AssetsInValid("delete", model.Delete(uri.Id))
-		c.ResourceDelete()
-	}))
-
-	//put is miss..... hhhhh
 	return g
 }
 
-// wait implement
-//type Orm interface {
-//	Where(interface{}) Orm
-//	All() interface{}
-//	First() interface{}
-//	Fill(create bool) interface{}
-//	Create(interface{}) (interface{}, error)
-//	Delete(interface{}) error
-//	PrimaryKey() string
-//	SetContext(ctx context.Context)
-//	Pagination() (interface{}, int)
-//	PageHelp(current int, size int) interface{}
-//}
-//
-//type OrmM struct {
-//	ResolveOne  func() interface{}
-//	ResolveList func() interface{}
-//	UsePage     bool
-//	context.Context
-//	Orm
-//}
-//
-//func (g *OrmM) SetContext(ctx context.Context) {
-//	g.Context = ctx
-//}
-//
-//func (g OrmM) PageHelp() interface{} {
-//	return g.Context.Value("app").(*GinHelp).GinPageHelp(g.Orm.PageHelp)
-//}
-//
-//func (g OrmM) List(where interface{}) (interface{}, int, error) {
-//	items := g.ResolveList()
-//
-//	if !isSlice(items) {
-//		return nil, 0, errors.New("data collection not slice")
-//	}
-//
-//	total := 0
-//
-//	db := g.Orm
-//	if where != nil {
-//		db.Where(where)
-//	}
-//	if g.UsePage {
-//		items, total = g.PageHelp().(Orm).Pagination()
-//	} else {
-//		items := g.Orm.All()
-//		total = reflect.ValueOf(items).Elem().Len()
-//	}
-//
-//	return items, total, nil
-//}
-//
-//func (g OrmM) Get(id string) (interface{}, error) {
-//	item := g.ResolveOne()
-//
-//	if !isPtr(item) {
-//		return nil, errors.New("data collection not ptr")
-//	}
-//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-//		return nil, errors.New("not found")
-//	} else {
-//		go_tool.AssetsError(err)
-//	}
-//	return item, nil
-//}
-//
-//func (g OrmM) PrimaryKey() string {
-//	return "id"
-//}
-//
-//func (g OrmM) Create(data interface{}) (interface{}, error) {
-//	item := g.ResolveOne()
-//
-//	if !isPtr(item) {
-//		return nil, errors.New("data collection not ptr")
-//	}
-//
-//	return g.Orm.Create(data)
-//}
-//
-//func (g OrmM) Delete(id string) error {
-//	item := g.ResolveOne()
-//
-//	if !isPtr(item) {
-//		return errors.New("data collection not ptr")
-//	}
-//
-//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-//		return errors.New("not found")
-//	} else {
-//		go_tool.AssetsError(err)
-//	}
-//	go_tool.AssetsError(g.Orm.Delete(item))
-//	return nil
-//}
-//
-//func (g OrmM) Patch(id string, data interface{}) error {
-//	item := g.ResolveOne()
-//
-//	if !isPtr(item) {
-//		return errors.New("data collection not ptr")
-//	}
-//
-//	if err := g.Orm.Where(go_tool.StringJoin(g.PrimaryKey(), " = ?"), id).First(item).Error; gorm.IsRecordNotFoundError(err) {
-//		return errors.New("not found")
-//	} else {
-//		go_tool.AssetsError(err)
-//	}
-//	go_tool.AssetsError(Db.Model(item).Updates(data).Error)
-//	return nil
-//}
+func (c *curd) curdList(help *GinHelp) {
+	help.ResourcePage(func(start int, size int) (interface{}, int) {
+		pipe := reflect.ValueOf(c.Option.Model).MethodByName("Query").Call(nil)[0]
+		return pipe.MethodByName("All").
+				Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
+			pipe.MethodByName("CountX").
+				Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
+	})
+}
+
+func (c *curd) curdDelete(help *GinHelp) {
+	uri := &struct {
+		Id string `uri:"id"`
+	}{}
+	help.InValidBindUri(uri)
+	reflect.ValueOf(c.Option.Model).MethodByName("DeleteOneID").Call([]reflect.Value{reflect.ValueOf(c.Option.IdTransfer(uri.Id).Interface())})[0].
+		MethodByName("ExecX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})
+	help.ResourceDelete()
+}
+
+func structForIn(v interface{}, cb func(key string, v reflect.Value)) {
+	vOf := reflect.ValueOf(v)
+	for _, key := range vOf.MapKeys() {
+		cb(key.String(), vOf.MapIndex(key))
+	}
+}
+
+func getInstanceByProto(v interface{}) interface{} {
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return reflect.New(t).Elem().Interface()
+}
+
+func strFirstUpper(str string) string {
+	vv := []rune(str)
+	builder := strings.Builder{}
+	for i := 0; i < len(vv); i++ {
+		if i == 0 {
+			vv[i] -= 32
+			builder.WriteRune(vv[i])
+		} else {
+			builder.WriteRune(vv[i])
+		}
+	}
+	return builder.String()
+}
+
+func entSets(fill *reflect.Value, v interface{}, pickKeys []string) {
+	structForIn(v, func(key string, v reflect.Value) {
+		if go_tool.InArray(pickKeys, strings.ToLower(key)) {
+			if method := fill.MethodByName(fmt.Sprintf("Set%s", strFirstUpper(key))); method.IsValid() {
+				method.Call([]reflect.Value{reflect.ValueOf(v.Interface().(string))})
+			}
+
+			if key == "edges" {
+				structForIn(v, func(key string, v reflect.Value) {
+					if method := fill.MethodByName(fmt.Sprintf("Set%s", strFirstUpper(key))); method.IsValid() {
+						method.Call([]reflect.Value{reflect.ValueOf(v.Interface().(string))})
+					}
+				})
+			}
+		}
+	})
+}
+
+func (c *curd) curdPost(help *GinHelp) {
+	defer func() {
+		if err := recover(); err != nil {
+			switch err.(type) {
+			case ResponseAbortError:
+				panic(err)
+			default:
+				help.InValidError("validation", err.(error))
+			}
+		}
+	}()
+	body := &struct {
+		Payload interface{}
+	}{}
+	help.InValidBind(body)
+
+	tmpB, err := json.Marshal(body.Payload)
+	if err != nil {
+		help.InValidError("encode", err)
+	}
+
+	instance := getInstanceByProto(c.Option.Instance)
+	err = json.Unmarshal(tmpB, &instance)
+	if err != nil {
+		help.InValidError("decode", err)
+	}
+
+	pipe := reflect.ValueOf(c.Option.Model).MethodByName("Create").Call(nil)[0]
+	entSets(&pipe, body.Payload, c.Option.CreateFields)
+	item := pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+	help.Resource(item)
+}
+
+func (c *curd) curdPatch(help *GinHelp) {
+	defer func() {
+		if err := recover(); err != nil {
+			switch err.(type) {
+			case ResponseAbortError:
+				panic(err)
+			default:
+				help.InValidError("validation", err.(error))
+			}
+		}
+	}()
+
+	uri := struct {
+		Id string `uri:"id"`
+	}{}
+	help.InValidBindUri(&uri)
+
+	body := &struct {
+		Payload interface{}
+	}{}
+	help.InValidBind(body)
+
+	tmpB, err := json.Marshal(body.Payload)
+	if err != nil {
+		help.InValidError("encode", err)
+	}
+	err = json.Unmarshal(tmpB, &c.Option.Instance)
+	if err != nil {
+		help.InValidError("decode", err)
+	}
+
+	item := reflect.ValueOf(c.Option.Model).MethodByName("GetX").Call([]reflect.Value{
+		reflect.ValueOf(help.AppContext),
+		c.Option.IdTransfer(uri.Id),
+	})[0].Interface()
+
+	if item == nil {
+		help.InValid("resource", "not found")
+	} else {
+		pipe := reflect.ValueOf(item).MethodByName("Update").Call(nil)[0]
+		entSets(&pipe, body.Payload, c.Option.UpdateFields)
+		item = pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+	}
+	help.Resource(item)
+}
+
+func (c *curd) curdOne(help *GinHelp) {
+	defer func() {
+		if err := recover(); err != nil {
+			switch err.(type) {
+			case ResponseAbortError:
+				panic(err)
+			default:
+				help.InValidError("validation", err.(error))
+			}
+		}
+	}()
+	uri := struct {
+		Id string `uri:"id"`
+	}{}
+	help.InValidBindUri(&uri)
+	help.Resource(
+		reflect.ValueOf(c.Option.Model).MethodByName("GetX").Call([]reflect.Value{
+			reflect.ValueOf(help.AppContext),
+			c.Option.IdTransfer(uri.Id),
+		})[0].Interface(),
+	)
+}

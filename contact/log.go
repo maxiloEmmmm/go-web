@@ -68,13 +68,11 @@ func (li *LogInfo) RawString() string {
 func (li *LogInfo) String() string {
 	switch Config.Log.Type {
 	case "elastic_search":
-		{
-			p, err := json.Marshal(li)
-			if err != nil {
-				LogLog(ErrorLevel, AppLogCode, err.Error())
-			}
-			return string(p)
+		p, err := json.Marshal(li)
+		if err != nil {
+			LogLog(ErrorLevel, AppLogCode, err.Error())
 		}
+		return string(p)
 	case "file":
 		fallthrough
 	default:
@@ -98,7 +96,7 @@ func (li *LogInfo) Log(code string, message string) *LogInfo {
 }
 
 func LogLog(level string, code string, message string) {
-	fmt.Fprint(os.Stdout, (&LogInfo{
+	fmt.Fprintf(os.Stdout, "%s\n", (&LogInfo{
 		Message: message,
 		Code:    code,
 		Time:    time.Now().Format("2006-01-02 15:04:05.000"),
@@ -134,9 +132,7 @@ const (
 func (config configIO) Write(p []byte) (n int, err error) {
 	switch Config.Log.Type {
 	case "elastic_search":
-		{
-			return config.GetELog().Write(p)
-		}
+		return config.GetELog().Write(p)
 	case "file":
 		fallthrough
 	default:

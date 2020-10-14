@@ -189,21 +189,21 @@ func (sew ServerErrorIO) Write(p []byte) (n int, err error) {
 }
 
 func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(help *gin.Context) {
 		gp := pageInfo{Current: 1, Size: 10}
 
-		if page, err := strconv.Atoi(c.DefaultQuery(GinPage.PageKey, "1")); err == nil {
+		if page, err := strconv.Atoi(help.DefaultQuery(GinPage.PageKey, "1")); err == nil {
 			gp.Current = page
 		}
 
-		if pageSize, err := strconv.Atoi(c.DefaultQuery(GinPage.PageSizeKey, string(GinPage.PageSizeDefault))); err == nil {
+		if pageSize, err := strconv.Atoi(help.DefaultQuery(GinPage.PageSizeKey, string(GinPage.PageSizeDefault))); err == nil {
 			gp.Size = pageSize
 		}
 
-		c.Set("page", gp)
+		help.Set("page", gp)
 
-		help := &GinHelp{Context: c, AppContext: context.Background()}
-		help.AppContext = context.WithValue(help.AppContext, "app", help)
+		x := &GinHelp{Context: help, AppContext: context.Background()}
+		x.AppContext = context.WithValue(x.AppContext, "app", help)
 		defer func(c *GinHelp) {
 			if err := recover(); err != nil {
 				switch err.(type) {
@@ -233,8 +233,8 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 					}
 				}
 			}
-		}(help)
-		h(help)
+		}(x)
+		h(x)
 	}
 }
 
