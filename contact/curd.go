@@ -29,7 +29,7 @@ func NewEntCurd(option CURDOption) *curd {
 	return &curd{option}
 }
 
-func (c *curd) Route(r *gin.Engine) *gin.RouterGroup {
+func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
 	if !strings.HasPrefix("/", c.Option.Prefix) {
 		c.Option.Prefix = go_tool.StringJoin("/", c.Option.Prefix)
 	}
