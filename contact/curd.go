@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+type CURDFilterFunc func(reflect.Value) reflect.Value
+
+type CURDFilter struct {
+	Create CURDFilterFunc
+	Patch  CURDFilterFunc
+	List   CURDFilterFunc
+}
+
 type CURDOption struct {
 	CreateFields []string
 	UpdateFields []string
@@ -16,6 +24,7 @@ type CURDOption struct {
 	Instance     interface{}
 	Prefix       string
 	IdTransfer   func(string) reflect.Value
+	Filter       CURDFilter
 }
 
 type curd struct {
@@ -26,6 +35,7 @@ func NewEntCurd(option CURDOption) *curd {
 	if option.UpdateFields == nil {
 		option.UpdateFields = option.CreateFields
 	}
+
 	return &curd{option}
 }
 
@@ -57,6 +67,10 @@ func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
 func (c *curd) curdList(help *GinHelp) {
 	help.ResourcePage(func(start int, size int) (interface{}, int) {
 		pipe := reflect.ValueOf(c.Option.Model).MethodByName("Query").Call(nil)[0]
+
+		if c.Option.Filter.List != nil {
+			pipe = c.Option.Filter.List(pipe)
+		}
 		return pipe.MethodByName("All").
 				Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
 			pipe.MethodByName("CountX").
@@ -150,6 +164,9 @@ func (c *curd) curdPost(help *GinHelp) {
 	}
 
 	pipe := reflect.ValueOf(c.Option.Model).MethodByName("Create").Call(nil)[0]
+	if c.Option.Filter.Create != nil {
+		pipe = c.Option.Filter.Create(pipe)
+	}
 	entSets(&pipe, body.Payload, c.Option.CreateFields)
 	item := pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	help.Resource(item)
@@ -195,6 +212,9 @@ func (c *curd) curdPatch(help *GinHelp) {
 		help.InValid("resource", "not found")
 	} else {
 		pipe := reflect.ValueOf(item).MethodByName("Update").Call(nil)[0]
+		if c.Option.Filter.Patch != nil {
+			pipe = c.Option.Filter.Patch(pipe)
+		}
 		entSets(&pipe, body.Payload, c.Option.UpdateFields)
 		item = pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	}
