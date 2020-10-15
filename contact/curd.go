@@ -10,11 +10,14 @@ import (
 )
 
 type CURDFilterFunc func(reflect.Value) reflect.Value
+type CURDFilterCheck func(ginHelp *GinHelp, id string)
 
 type CURDFilter struct {
-	Create CURDFilterFunc
-	Patch  CURDFilterFunc
-	List   CURDFilterFunc
+	Create       CURDFilterFunc
+	Patch        CURDFilterFunc
+	List         CURDFilterFunc
+	Delete       CURDFilterFunc
+	DeleteBefore CURDFilterCheck
 }
 
 type CURDOption struct {
@@ -25,6 +28,7 @@ type CURDOption struct {
 	Prefix       string
 	IdTransfer   func(string) reflect.Value
 	Filter       CURDFilter
+	Order        []reflect.Value
 }
 
 type curd struct {
@@ -37,6 +41,24 @@ func NewEntCurd(option CURDOption) *curd {
 	}
 
 	return &curd{option}
+}
+
+func EntResourceCheck(help *GinHelp, source interface{}, tip string) {
+	if source != nil {
+		v := reflect.ValueOf(source)
+		if v.IsNil() {
+			return
+		}
+
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+
+		help.InValid("resource", fmt.Sprintf("资源存在「%s(%s)」关联",
+			tip,
+			methodHelp(v.FieldByName("ID"), "String", nil)[0].Interface().(string),
+		))
+	}
 }
 
 func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
@@ -66,15 +88,23 @@ func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
 
 func (c *curd) curdList(help *GinHelp) {
 	help.ResourcePage(func(start int, size int) (interface{}, int) {
-		pipe := reflect.ValueOf(c.Option.Model).MethodByName("Query").Call(nil)[0]
+		pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Query", nil)[0]
 
 		if c.Option.Filter.List != nil {
 			pipe = c.Option.Filter.List(pipe)
 		}
-		return pipe.MethodByName("All").
-				Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
-			pipe.MethodByName("CountX").
-				Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
+
+		listPipe := methodHelp(pipe, "Clone", nil)[0]
+
+		if len(c.Option.Order) > 0 {
+			listPipe = methodHelp(listPipe, "Order", c.Option.Order)[0]
+		}
+
+		listPipe = methodHelp(listPipe, "Offset", []reflect.Value{reflect.ValueOf(start)})[0]
+		listPipe = methodHelp(listPipe, "Limit", []reflect.Value{reflect.ValueOf(size)})[0]
+
+		return methodHelp(listPipe, "All", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
+			methodHelp(pipe, "CountX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
 	})
 }
 
@@ -83,8 +113,15 @@ func (c *curd) curdDelete(help *GinHelp) {
 		Id string `uri:"id"`
 	}{}
 	help.InValidBindUri(uri)
-	reflect.ValueOf(c.Option.Model).MethodByName("DeleteOneID").Call([]reflect.Value{reflect.ValueOf(c.Option.IdTransfer(uri.Id).Interface())})[0].
-		MethodByName("ExecX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})
+
+	if c.Option.Filter.DeleteBefore != nil {
+		c.Option.Filter.DeleteBefore(help, uri.Id)
+	}
+	methodHelp(
+		methodHelp(reflect.ValueOf(c.Option.Model), "DeleteOneID", []reflect.Value{reflect.ValueOf(c.Option.IdTransfer(uri.Id).Interface())})[0],
+		"ExecX",
+		[]reflect.Value{reflect.ValueOf(help.AppContext)},
+	)
 	help.ResourceDelete()
 }
 
@@ -104,6 +141,26 @@ func getInstanceByProto(v interface{}) interface{} {
 	return reflect.New(t).Elem().Interface()
 }
 
+func methodCallHelp(s reflect.Value, method string, args []reflect.Value, isSliceCall bool) []reflect.Value {
+	if method := s.MethodByName(method); method.IsValid() {
+		if isSliceCall {
+			return method.CallSlice(args)
+		} else {
+			return method.Call(args)
+		}
+	} else {
+		return nil
+	}
+}
+
+func methodHelp(s reflect.Value, method string, args []reflect.Value) []reflect.Value {
+	return methodCallHelp(s, method, args, false)
+}
+
+func methodSliceHelp(s reflect.Value, method string, args []reflect.Value) []reflect.Value {
+	return methodCallHelp(s, method, args, true)
+}
+
 func strFirstUpper(str string) string {
 	vv := []rune(str)
 	builder := strings.Builder{}
@@ -121,15 +178,11 @@ func strFirstUpper(str string) string {
 func entSets(fill *reflect.Value, v interface{}, pickKeys []string) {
 	structForIn(v, func(key string, v reflect.Value) {
 		if go_tool.InArray(pickKeys, strings.ToLower(key)) {
-			if method := fill.MethodByName(fmt.Sprintf("Set%s", strFirstUpper(key))); method.IsValid() {
-				method.Call([]reflect.Value{reflect.ValueOf(v.Interface().(string))})
-			}
+			methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{reflect.ValueOf(v.Interface().(string))})
 
 			if key == "edges" {
 				structForIn(v, func(key string, v reflect.Value) {
-					if method := fill.MethodByName(fmt.Sprintf("Set%s", strFirstUpper(key))); method.IsValid() {
-						method.Call([]reflect.Value{reflect.ValueOf(v.Interface().(string))})
-					}
+					methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{reflect.ValueOf(v.Interface().(string))})
 				})
 			}
 		}
@@ -163,12 +216,12 @@ func (c *curd) curdPost(help *GinHelp) {
 		help.InValidError("decode", err)
 	}
 
-	pipe := reflect.ValueOf(c.Option.Model).MethodByName("Create").Call(nil)[0]
+	pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Create", nil)[0]
 	if c.Option.Filter.Create != nil {
 		pipe = c.Option.Filter.Create(pipe)
 	}
 	entSets(&pipe, body.Payload, c.Option.CreateFields)
-	item := pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+	item := methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	help.Resource(item)
 }
 
@@ -203,7 +256,7 @@ func (c *curd) curdPatch(help *GinHelp) {
 		help.InValidError("decode", err)
 	}
 
-	item := reflect.ValueOf(c.Option.Model).MethodByName("GetX").Call([]reflect.Value{
+	item := methodHelp(reflect.ValueOf(c.Option.Model), "GetX", []reflect.Value{
 		reflect.ValueOf(help.AppContext),
 		c.Option.IdTransfer(uri.Id),
 	})[0].Interface()
@@ -211,12 +264,12 @@ func (c *curd) curdPatch(help *GinHelp) {
 	if item == nil {
 		help.InValid("resource", "not found")
 	} else {
-		pipe := reflect.ValueOf(item).MethodByName("Update").Call(nil)[0]
+		pipe := methodHelp(reflect.ValueOf(item), "Update", nil)[0]
 		if c.Option.Filter.Patch != nil {
 			pipe = c.Option.Filter.Patch(pipe)
 		}
 		entSets(&pipe, body.Payload, c.Option.UpdateFields)
-		item = pipe.MethodByName("SaveX").Call([]reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+		item = methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	}
 	help.Resource(item)
 }
@@ -237,7 +290,7 @@ func (c *curd) curdOne(help *GinHelp) {
 	}{}
 	help.InValidBindUri(&uri)
 	help.Resource(
-		reflect.ValueOf(c.Option.Model).MethodByName("GetX").Call([]reflect.Value{
+		methodHelp(reflect.ValueOf(c.Option.Model), "GetX", []reflect.Value{
 			reflect.ValueOf(help.AppContext),
 			c.Option.IdTransfer(uri.Id),
 		})[0].Interface(),
