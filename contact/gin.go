@@ -78,6 +78,25 @@ var CorsConfig = Cors{
 	AllowCredentials: false,
 }
 
+func MiddlewareInvalidHelp(c *gin.Context, code string, message string) {
+	c.AbortWithStatusJSON(http.StatusUnprocessableEntity, InValidFunc(code, message))
+}
+
+type UserResolve func(*gin.Context) string
+
+func GinCasbin(ur UserResolve) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ok, err := Permission.Enforce(ur(c), c.Request.URL.Path, c.Request.Method)
+		if err != nil {
+			Error.Log("route.gin.casbin", err.Error())
+		}
+		if !ok {
+			MiddlewareInvalidHelp(c, "permission", "forbidden")
+		}
+		c.Next()
+	}
+}
+
 func GinCors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
@@ -229,7 +248,7 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 							)
 							span.(opentracing.Span).SetTag("status", "error")
 						}
-						c.AbortWithStatusJSON(http.StatusUnprocessableEntity, InValidFunc("server", md5))
+						MiddlewareInvalidHelp(c.Context, "server", "md5")
 					}
 				}
 			}

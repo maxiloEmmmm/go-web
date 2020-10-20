@@ -9,6 +9,8 @@ import (
 	"log"
 )
 
+var DbEngine string
+
 func InitDB(open func(string, string) (*sql.DB, error), mode string) {
 	if mode == "" {
 		mode = Config.App.Mode
@@ -20,7 +22,9 @@ func InitDB(open func(string, string) (*sql.DB, error), mode string) {
 			engine = "mysql"
 		}
 
-		db, err := open(engine.(string), cfg["source"].(string))
+		DbEngine = engine.(string)
+
+		db, err := open(DbEngine, cfg["source"].(string))
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -36,6 +40,11 @@ func InitDB(open func(string, string) (*sql.DB, error), mode string) {
 	}
 }
 
+const (
+	BoolFieldTrue  = 0
+	BoolFieldFalse = 1
+)
+
 type BoolField struct {
 	Bool bool
 }
@@ -50,7 +59,7 @@ func (b *BoolField) Scan(value interface{}) error {
 	if err != nil {
 		return err
 	}
-	if val.Int64 == 1 {
+	if val.Int64 == BoolFieldFalse {
 		b.Bool = false
 	} else {
 		b.Bool = true
@@ -61,9 +70,9 @@ func (b *BoolField) Scan(value interface{}) error {
 
 func (b BoolField) Value() (driver.Value, error) {
 	if b.Bool {
-		return int64(0), nil
+		return int64(BoolFieldTrue), nil
 	} else {
-		return int64(1), nil
+		return int64(BoolFieldFalse), nil
 	}
 }
 

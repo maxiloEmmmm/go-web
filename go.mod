@@ -3,11 +3,11 @@ module github.com/maxiloEmmmm/go-web
 go 1.13
 
 require (
-	github.com/casbin/casbin/v2 v2.13.1 // indirect
+	github.com/casbin/casbin/v2 v2.14.2
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
-	github.com/facebook/ent v0.4.3 // indirect
+	github.com/facebook/ent v0.4.3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
@@ -17,6 +17,7 @@ require (
 	github.com/maxiloEmmmm/go-tool v0.0.6
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/stretchr/testify v1.6.1
 	github.com/uber/jaeger-client-go v2.24.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	go.uber.org/multierr v1.6.0 // indirect

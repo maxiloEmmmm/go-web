@@ -1,0 +1,7 @@
+g,admin,role_admin
+p, role_admin, /sys/rbac, GET, allow
+p, role_admin, /sys/rbac/:id, GET, allow
+p, role_admin, /sys/rbac/:id, DELETE, allow
+p, role_admin, /sys/rbac/:id, PATCH, allow
+p, role_admin, /sys/rbac, POST, allow
+p, haha, /sys/rbac, GET, allow
