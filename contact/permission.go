@@ -71,19 +71,37 @@ func (adapter *entPolicyAdapter) LoadPolicy(model model.Model) error {
 	return nil
 }
 
+func (adapter *entPolicyAdapter) setRule(create *ent.CasbinRuleCreate, pType string, rule []string) {
+	create.SetPType(pType)
+	rLen := len(rule)
+	if rLen > 0 {
+		create.SetV0(rule[0])
+	}
+	if rLen > 1 {
+		create.SetV1(rule[1])
+	}
+	if rLen > 2 {
+		create.SetV2(rule[2])
+	}
+	if rLen > 3 {
+		create.SetV3(rule[3])
+	}
+	if rLen > 4 {
+		create.SetV4(rule[4])
+	}
+	if rLen > 5 {
+		create.SetV5(rule[5])
+	}
+}
+
 func (adapter *entPolicyAdapter) SavePolicy(m model.Model) error {
 	adapter.client.CasbinRule.Delete().ExecX(adapter.ctx)
 	for _, kind := range []model.AssertionMap{m["p"], m["g"]} {
 		for pType, ast := range kind {
 			for _, rule := range ast.Policy {
-				_, err := adapter.client.CasbinRule.Create().
-					SetPType(pType).
-					SetV0(rule[0]).
-					SetV1(rule[1]).
-					SetV2(rule[2]).
-					SetV3(rule[3]).
-					SetV4(rule[4]).
-					SetV5(rule[5]).Save(adapter.ctx)
+				pipe := adapter.client.CasbinRule.Create()
+				adapter.setRule(pipe, pType, rule)
+				_, err := pipe.Save(adapter.ctx)
 				if err != nil {
 					return err
 				}
@@ -95,29 +113,36 @@ func (adapter *entPolicyAdapter) SavePolicy(m model.Model) error {
 
 // AddPolicy adds a policy rule to the storage.
 func (adapter *entPolicyAdapter) AddPolicy(sec string, pType string, rule []string) error {
-	_, err := adapter.client.CasbinRule.Create().
-		SetPType(pType).
-		SetV0(rule[0]).
-		SetV1(rule[1]).
-		SetV2(rule[2]).
-		SetV3(rule[3]).
-		SetV4(rule[4]).
-		SetV5(rule[5]).Save(adapter.ctx)
+	pipe := adapter.client.CasbinRule.Create()
+	adapter.setRule(pipe, pType, rule)
+	_, err := pipe.Save(adapter.ctx)
 	return err
 }
 
 // RemovePolicy removes a policy rule from the storage.
 func (adapter *entPolicyAdapter) RemovePolicy(sec string, pType string, rule []string) error {
-	_, err := adapter.client.CasbinRule.Delete().
-		Where(casbinrule.And(
-			casbinrule.PType(pType),
-			casbinrule.V0(rule[0]),
-			casbinrule.V1(rule[1]),
-			casbinrule.V2(rule[2]),
-			casbinrule.V3(rule[3]),
-			casbinrule.V4(rule[4]),
-			casbinrule.V5(rule[5]),
-		)).Exec(adapter.ctx)
+	pipe := adapter.client.CasbinRule.Delete().Where(casbinrule.PType(pType))
+
+	rLen := len(rule)
+	if rLen > 0 {
+		pipe.Where(casbinrule.V0(rule[0]))
+	}
+	if rLen > 1 {
+		pipe.Where(casbinrule.V1(rule[1]))
+	}
+	if rLen > 2 {
+		pipe.Where(casbinrule.V2(rule[2]))
+	}
+	if rLen > 3 {
+		pipe.Where(casbinrule.V3(rule[3]))
+	}
+	if rLen > 4 {
+		pipe.Where(casbinrule.V4(rule[4]))
+	}
+	if rLen > 5 {
+		pipe.Where(casbinrule.V5(rule[5]))
+	}
+	_, err := pipe.Exec(adapter.ctx)
 	return err
 }
 
@@ -169,7 +194,105 @@ func InitPermission(m string, adapter interface{}) {
 	}
 }
 
-func PermissionRoute(desc string, path string, handlers ...gin.HandlerFunc) (string, []gin.HandlerFunc) {
+const DefaultRoleUser = "_"
 
-	return path, handlers
+func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
+	if prefix == "" {
+		prefix = "casbin"
+	}
+	cr := r.Group(prefix)
+
+	cr.GET("/rule", GinHelpHandle(func(c *GinHelp) {
+		c.Resource(Permission.GetPolicy())
+	}))
+	cr.POST("/rule", GinHelpHandle(func(c *GinHelp) {
+		body := &struct {
+			Payload RuleCreate `binding:"required"`
+		}{}
+		c.InValidBind(&body)
+		_, err := Permission.AddPolicy(strings.Split(body.Payload.Rule, ","))
+		c.AssetsInValid("add.policy", err)
+		c.ResourceCreate(nil)
+	}))
+	cr.DELETE("/rule/:rule", GinHelpHandle(func(c *GinHelp) {
+		_, err := Permission.RemovePolicy(strings.Split(c.Param("rule"), ","))
+		c.AssetsInValid("remove.policy", err)
+		c.ResourceDelete()
+	}))
+	cr.GET("/role", GinHelpHandle(func(c *GinHelp) {
+		c.Resource(Permission.GetAllRoles())
+	}))
+	cr.GET("/role/:role/user", GinHelpHandle(func(c *GinHelp) {
+		uri := &struct {
+			Role string `uri:"role"`
+		}{}
+		c.InValidBindUri(&uri)
+
+		users, err := Permission.GetUsersForRole(uri.Role)
+		c.AssetsInValid("get", err)
+		c.Resource(go_tool.ArrayFilter(&users, func(d interface{}) bool {
+			return d.(string) != DefaultRoleUser
+		}))
+	}))
+	cr.POST("/role/:role/user/:user", GinHelpHandle(func(c *GinHelp) {
+		uri := &struct {
+			Role string `uri:"role"`
+			User string `uri:"user"`
+		}{}
+		c.InValidBindUri(&uri)
+
+		_, err := Permission.AddRoleForUser(uri.User, uri.Role)
+		c.AssetsInValid("add", err)
+		c.ResourceCreate(nil)
+	}))
+	cr.DELETE("/role/:role/user/:user", GinHelpHandle(func(c *GinHelp) {
+		uri := &struct {
+			Role string `uri:"role"`
+			User string `uri:"user"`
+		}{}
+		c.InValidBindUri(&uri)
+
+		_, err := Permission.RemoveGroupingPolicy(uri.User, uri.Role)
+		c.AssetsInValid("remove", err)
+		c.ResourceDelete()
+	}))
+	cr.POST("/role", GinHelpHandle(func(c *GinHelp) {
+		body := &struct {
+			Payload RoleCreate `binding:"required"`
+		}{}
+		c.InValidBind(&body)
+
+		// 加前缀 区分策略中的sub
+		role := go_tool.StringJoin("role_", body.Payload.Role)
+		has, err := Permission.HasRoleForUser(DefaultRoleUser, role)
+		c.AssetsInValid("has.role", err)
+
+		if !has {
+			_, err = Permission.AddGroupingPolicy(DefaultRoleUser, role)
+			c.AssetsInValid("add.group.policy", err)
+		}
+		c.ResourceCreate(nil)
+	}))
+	cr.DELETE("/role/:role", GinHelpHandle(func(c *GinHelp) {
+		role := c.Param("role")
+		has, err := Permission.HasRoleForUser("_", role)
+		c.AssetsInValid("has.role", err)
+
+		if has {
+			_, err = Permission.DeleteRole(role)
+			c.AssetsInValid("delete.role", err)
+		}
+		c.ResourceDelete()
+	}))
+	cr.GET("/user", GinHelpHandle(func(c *GinHelp) {
+		c.Resource(Permission.GetAllSubjects())
+	}))
+
+	return cr
+}
+
+func PermissionRulePut() gin.HandlerFunc {
+	return GinHelpHandle(func(c *GinHelp) {
+
+	})
 }
