@@ -214,8 +214,10 @@ func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 		c.AssetsInValid("add.policy", err)
 		c.ResourceCreate(nil)
 	}))
-	cr.DELETE("/rule/:rule", GinHelpHandle(func(c *GinHelp) {
-		_, err := Permission.RemovePolicy(strings.Split(c.Param("rule"), ","))
+	cr.DELETE("/rule", GinHelpHandle(func(c *GinHelp) {
+		// rule转义后 如: x,/x/:w/1,GET,allow 或 x%2C%2Fx%2F%3Aw%2F1%2CGET%2Callow 无法匹配
+		// 所以用query 而不是param
+		_, err := Permission.RemovePolicy(strings.Split(c.Query("rule"), ","))
 		c.AssetsInValid("remove.policy", err)
 		c.ResourceDelete()
 	}))

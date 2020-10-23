@@ -1,7 +1,6 @@
 package contact
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	go_tool "github.com/maxiloEmmmm/go-tool"
@@ -9,8 +8,25 @@ import (
 	"strings"
 )
 
-type CURDFilterFunc func(reflect.Value) reflect.Value
+type CURDFilterFunc func(*GinHelp, interface{}, reflect.Value) reflect.Value
 type CURDFilterCheck func(ginHelp *GinHelp, id string)
+type FieldValueFunc func(interface{}) reflect.Value
+
+func DefaultFieldValueFunc(v interface{}) reflect.Value {
+	return reflect.ValueOf(v.(string))
+}
+func BoolFieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(BoolField{Bool: d.(bool)})
+}
+func IntFieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(d.(int))
+}
+func Int8FieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(d.(int8))
+}
+func float64FieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(d.(float64))
+}
 
 type CURDFilter struct {
 	Create       CURDFilterFunc
@@ -23,12 +39,18 @@ type CURDFilter struct {
 type CURDOption struct {
 	CreateFields []string
 	UpdateFields []string
+	FieldValue   map[string]FieldValueFunc
 	Model        interface{}
 	Instance     interface{}
 	Prefix       string
 	IdTransfer   func(string) reflect.Value
 	Filter       CURDFilter
 	Order        []reflect.Value
+}
+
+type CURDList struct {
+	Size  int
+	Start int
 }
 
 type curd struct {
@@ -61,7 +83,7 @@ func EntResourceCheck(help *GinHelp, source interface{}, tip string) {
 	}
 }
 
-func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
+func (c curd) Route(r gin.IRouter) *gin.RouterGroup {
 	if !strings.HasPrefix("/", c.Option.Prefix) {
 		c.Option.Prefix = go_tool.StringJoin("/", c.Option.Prefix)
 	}
@@ -86,12 +108,12 @@ func (c *curd) Route(r gin.IRouter) *gin.RouterGroup {
 	return g
 }
 
-func (c *curd) curdList(help *GinHelp) {
+func (c curd) curdList(help *GinHelp) {
 	help.ResourcePage(func(start int, size int) (interface{}, int) {
 		pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Query", nil)[0]
 
 		if c.Option.Filter.List != nil {
-			pipe = c.Option.Filter.List(pipe)
+			pipe = c.Option.Filter.List(help, CURDList{Size: size, Start: size}, pipe)
 		}
 
 		listPipe := methodHelp(pipe, "Clone", nil)[0]
@@ -108,7 +130,7 @@ func (c *curd) curdList(help *GinHelp) {
 	})
 }
 
-func (c *curd) curdDelete(help *GinHelp) {
+func (c curd) curdDelete(help *GinHelp) {
 	uri := &struct {
 		Id string `uri:"id"`
 	}{}
@@ -125,10 +147,22 @@ func (c *curd) curdDelete(help *GinHelp) {
 	help.ResourceDelete()
 }
 
-func structForIn(v interface{}, cb func(key string, v reflect.Value)) {
+func dataForIn(v interface{}, cb func(key string, v reflect.Value)) {
 	vOf := reflect.ValueOf(v)
-	for _, key := range vOf.MapKeys() {
-		cb(key.String(), vOf.MapIndex(key))
+	if vOf.Kind() == reflect.Ptr {
+		vOf = vOf.Elem()
+	}
+	switch vOf.Kind() {
+	case reflect.Map:
+		for _, key := range vOf.MapKeys() {
+			cb(key.String(), vOf.MapIndex(key))
+		}
+	case reflect.Struct:
+		t := reflect.TypeOf(vOf.Interface())
+		fLen := t.NumField()
+		for i := 0; i < fLen; i++ {
+			cb(t.Field(i).Name, vOf.Field(i))
+		}
 	}
 }
 
@@ -138,7 +172,7 @@ func getInstanceByProto(v interface{}) interface{} {
 		t = t.Elem()
 	}
 
-	return reflect.New(t).Elem().Interface()
+	return reflect.New(t).Interface()
 }
 
 func methodCallHelp(s reflect.Value, method string, args []reflect.Value, isSliceCall bool) []reflect.Value {
@@ -166,7 +200,9 @@ func strFirstUpper(str string) string {
 	builder := strings.Builder{}
 	for i := 0; i < len(vv); i++ {
 		if i == 0 {
-			vv[i] -= 32
+			if vv[i] > 96 {
+				vv[i] -= 32
+			}
 			builder.WriteRune(vv[i])
 		} else {
 			builder.WriteRune(vv[i])
@@ -175,21 +211,27 @@ func strFirstUpper(str string) string {
 	return builder.String()
 }
 
-func entSets(fill *reflect.Value, v interface{}, pickKeys []string) {
-	structForIn(v, func(key string, v reflect.Value) {
-		if go_tool.InArray(pickKeys, strings.ToLower(key)) {
-			methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{reflect.ValueOf(v.Interface().(string))})
-
-			if key == "edges" {
-				structForIn(v, func(key string, v reflect.Value) {
-					methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{reflect.ValueOf(v.Interface().(string))})
-				})
+func entSets(fill *reflect.Value, v interface{}, pickKeys []string, fieldValueResolve map[string]FieldValueFunc) {
+	dataForIn(v, func(key string, v reflect.Value) {
+		lowerKey := strings.ToLower(key)
+		upKey := strings.ToUpper(key)
+		if go_tool.InArray(pickKeys, lowerKey) {
+			var dv FieldValueFunc
+			if tmp, has := fieldValueResolve[lowerKey]; has {
+				dv = tmp
+			} else {
+				dv = DefaultFieldValueFunc
+			}
+			r := methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{dv(v.Interface())})
+			// 处理 setUrl => setURL
+			if r == nil {
+				methodHelp(*fill, fmt.Sprintf("Set%s", upKey), []reflect.Value{dv(v.Interface())})
 			}
 		}
 	})
 }
 
-func (c *curd) curdPost(help *GinHelp) {
+func (c curd) curdPost(help *GinHelp) {
 	defer func() {
 		if err := recover(); err != nil {
 			switch err.(type) {
@@ -203,29 +245,31 @@ func (c *curd) curdPost(help *GinHelp) {
 	body := &struct {
 		Payload interface{}
 	}{}
+	body.Payload = getInstanceByProto(c.Option.Instance)
 	help.InValidBind(body)
 
-	tmpB, err := json.Marshal(body.Payload)
-	if err != nil {
-		help.InValidError("encode", err)
-	}
-
-	instance := getInstanceByProto(c.Option.Instance)
-	err = json.Unmarshal(tmpB, &instance)
-	if err != nil {
-		help.InValidError("decode", err)
-	}
+	//body.Payload = getInstanceByProto(c.Option.Instance)
+	//tmpB, err := json.Marshal(body.Payload)
+	//if err != nil {
+	//	help.InValidError("encode", err)
+	//}
+	//
+	//instance := getInstanceByProto(c.Option.Instance)
+	//err = json.Unmarshal(tmpB, instance)
+	//if err != nil {
+	//	help.InValidError("decode", err)
+	//}
 
 	pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Create", nil)[0]
 	if c.Option.Filter.Create != nil {
-		pipe = c.Option.Filter.Create(pipe)
+		pipe = c.Option.Filter.Create(help, body.Payload, pipe)
 	}
-	entSets(&pipe, body.Payload, c.Option.CreateFields)
+	entSets(&pipe, body.Payload, c.Option.CreateFields, c.Option.FieldValue)
 	item := methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	help.Resource(item)
 }
 
-func (c *curd) curdPatch(help *GinHelp) {
+func (c curd) curdPatch(help *GinHelp) {
 	defer func() {
 		if err := recover(); err != nil {
 			switch err.(type) {
@@ -245,16 +289,19 @@ func (c *curd) curdPatch(help *GinHelp) {
 	body := &struct {
 		Payload interface{}
 	}{}
+	body.Payload = getInstanceByProto(c.Option.Instance)
 	help.InValidBind(body)
 
-	tmpB, err := json.Marshal(body.Payload)
-	if err != nil {
-		help.InValidError("encode", err)
-	}
-	err = json.Unmarshal(tmpB, &c.Option.Instance)
-	if err != nil {
-		help.InValidError("decode", err)
-	}
+	//tmpB, err := json.Marshal(body.Payload)
+	//if err != nil {
+	//	help.InValidError("encode", err)
+	//}
+	//
+	//instance := getInstanceByProto(c.Option.Instance)
+	//err = json.Unmarshal(tmpB, instance)
+	//if err != nil {
+	//	help.InValidError("decode", err)
+	//}
 
 	item := methodHelp(reflect.ValueOf(c.Option.Model), "GetX", []reflect.Value{
 		reflect.ValueOf(help.AppContext),
@@ -266,15 +313,15 @@ func (c *curd) curdPatch(help *GinHelp) {
 	} else {
 		pipe := methodHelp(reflect.ValueOf(item), "Update", nil)[0]
 		if c.Option.Filter.Patch != nil {
-			pipe = c.Option.Filter.Patch(pipe)
+			pipe = c.Option.Filter.Patch(help, body.Payload, pipe)
 		}
-		entSets(&pipe, body.Payload, c.Option.UpdateFields)
+		entSets(&pipe, body.Payload, c.Option.UpdateFields, c.Option.FieldValue)
 		item = methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
 	}
 	help.Resource(item)
 }
 
-func (c *curd) curdOne(help *GinHelp) {
+func (c curd) curdOne(help *GinHelp) {
 	defer func() {
 		if err := recover(); err != nil {
 			switch err.(type) {
