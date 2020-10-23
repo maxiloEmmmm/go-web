@@ -248,18 +248,6 @@ func (c curd) curdPost(help *GinHelp) {
 	body.Payload = getInstanceByProto(c.Option.Instance)
 	help.InValidBind(body)
 
-	//body.Payload = getInstanceByProto(c.Option.Instance)
-	//tmpB, err := json.Marshal(body.Payload)
-	//if err != nil {
-	//	help.InValidError("encode", err)
-	//}
-	//
-	//instance := getInstanceByProto(c.Option.Instance)
-	//err = json.Unmarshal(tmpB, instance)
-	//if err != nil {
-	//	help.InValidError("decode", err)
-	//}
-
 	pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Create", nil)[0]
 	if c.Option.Filter.Create != nil {
 		pipe = c.Option.Filter.Create(help, body.Payload, pipe)
@@ -291,17 +279,6 @@ func (c curd) curdPatch(help *GinHelp) {
 	}{}
 	body.Payload = getInstanceByProto(c.Option.Instance)
 	help.InValidBind(body)
-
-	//tmpB, err := json.Marshal(body.Payload)
-	//if err != nil {
-	//	help.InValidError("encode", err)
-	//}
-	//
-	//instance := getInstanceByProto(c.Option.Instance)
-	//err = json.Unmarshal(tmpB, instance)
-	//if err != nil {
-	//	help.InValidError("decode", err)
-	//}
 
 	item := methodHelp(reflect.ValueOf(c.Option.Model), "GetX", []reflect.Value{
 		reflect.ValueOf(help.AppContext),
