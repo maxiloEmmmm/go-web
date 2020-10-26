@@ -9,6 +9,7 @@ import (
 )
 
 type CURDFilterFunc func(*GinHelp, interface{}, reflect.Value) reflect.Value
+type CURDListFilterFunc func(*GinHelp, interface{}, interface{}) interface{}
 type CURDFilterCheck func(ginHelp *GinHelp, id string)
 type FieldValueFunc func(interface{}) reflect.Value
 
@@ -32,6 +33,7 @@ type CURDFilter struct {
 	Create       CURDFilterFunc
 	Patch        CURDFilterFunc
 	List         CURDFilterFunc
+	ListData     CURDListFilterFunc
 	Delete       CURDFilterFunc
 	DeleteBefore CURDFilterCheck
 }
@@ -111,22 +113,26 @@ func (c curd) Route(r gin.IRouter) *gin.RouterGroup {
 func (c curd) curdList(help *GinHelp) {
 	help.ResourcePage(func(start int, size int) (interface{}, int) {
 		pipe := methodHelp(reflect.ValueOf(c.Option.Model), "Query", nil)[0]
-
+		listPayload := CURDList{Size: size, Start: size}
 		if c.Option.Filter.List != nil {
-			pipe = c.Option.Filter.List(help, CURDList{Size: size, Start: size}, pipe)
+			pipe = c.Option.Filter.List(help, listPayload, pipe)
 		}
 
-		listPipe := methodHelp(pipe, "Clone", nil)[0]
+		clonePipe := methodHelp(pipe, "Clone", nil)[0]
 
 		if len(c.Option.Order) > 0 {
-			listPipe = methodHelp(listPipe, "Order", c.Option.Order)[0]
+			pipe = methodHelp(pipe, "Order", c.Option.Order)[0]
 		}
 
-		listPipe = methodHelp(listPipe, "Offset", []reflect.Value{reflect.ValueOf(start)})[0]
-		listPipe = methodHelp(listPipe, "Limit", []reflect.Value{reflect.ValueOf(size)})[0]
+		pipe = methodHelp(pipe, "Offset", []reflect.Value{reflect.ValueOf(start)})[0]
+		pipe = methodHelp(pipe, "Limit", []reflect.Value{reflect.ValueOf(size)})[0]
 
-		return methodHelp(listPipe, "All", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
-			methodHelp(pipe, "CountX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
+		data := methodHelp(pipe, "All", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+		if c.Option.Filter.ListData != nil {
+			data = c.Option.Filter.ListData(help, listPayload, data)
+		}
+		return methodHelp(pipe, "All", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
+			methodHelp(clonePipe, "CountX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
 	})
 }
 
@@ -222,11 +228,19 @@ func entSets(fill *reflect.Value, v interface{}, pickKeys []string, fieldValueRe
 			} else {
 				dv = DefaultFieldValueFunc
 			}
-			r := methodHelp(*fill, fmt.Sprintf("Set%s", strFirstUpper(key)), []reflect.Value{dv(v.Interface())})
-			// 处理 setUrl => setURL
-			if r == nil {
-				methodHelp(*fill, fmt.Sprintf("Set%s", upKey), []reflect.Value{dv(v.Interface())})
+
+			if go_tool.InArray([]string{
+				"ACL", "API", "ASCII", "AWS", "CPU", "CSS", "DNS", "EOF", "GB", "GUID",
+				"HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "KB", "LHS", "MAC", "MB",
+				"QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SQL", "SSH", "SSO", "TCP",
+				"TLS", "TTL", "UDP", "UI", "UID", "URI", "URL", "UTF8", "UUID", "VM",
+				"XML", "XMPP", "XSRF", "XSS",
+			}, upKey) {
+				key = upKey
+			} else {
+				key = strFirstUpper(key)
 			}
+			methodHelp(*fill, fmt.Sprintf("Set%s", key), []reflect.Value{dv(v.Interface())})
 		}
 	})
 }

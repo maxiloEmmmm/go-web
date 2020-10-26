@@ -82,11 +82,19 @@ func MiddlewareInvalidHelp(c *gin.Context, code string, message string) {
 	c.AbortWithStatusJSON(http.StatusUnprocessableEntity, InValidFunc(code, message))
 }
 
-type UserResolve func(*gin.Context) string
+type SubResolve func(*gin.Context) string
+type ObjResolve func(*gin.Context) string
+type ActResolve func(*gin.Context) string
 
-func GinCasbin(ur UserResolve) gin.HandlerFunc {
+type GinCasbinOption struct {
+	Sub SubResolve
+	Obj ObjResolve
+	Act ActResolve
+}
+
+func GinCasbin(resolve GinCasbinOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ok, err := Permission.Enforce(ur(c), c.Request.URL.Path, c.Request.Method)
+		ok, err := Permission.Enforce(resolve.Sub(c), resolve.Obj(c), resolve.Act(c))
 		if err != nil {
 			Error.Log("route.gin.casbin", err.Error())
 		}

@@ -196,6 +196,11 @@ func InitPermission(m string, adapter interface{}) {
 
 const DefaultRoleUser = "_"
 
+type PermissionRulePut struct {
+	Add    []string
+	Remove []string
+}
+
 func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 	if prefix == "" {
 		prefix = "casbin"
@@ -213,6 +218,21 @@ func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 		_, err := Permission.AddPolicy(strings.Split(body.Payload.Rule, ","))
 		c.AssetsInValid("add.policy", err)
 		c.ResourceCreate(nil)
+	}))
+	cr.PUT("/rule", GinHelpHandle(func(c *GinHelp) {
+		body := &struct {
+			Payload PermissionRulePut
+		}{}
+		c.InValidBind(body)
+
+		for _, add := range body.Payload.Add {
+			rules := strings.Split(add, ",")
+			Permission.AddPolicy(rules)
+		}
+		for _, remove := range body.Payload.Remove {
+			Permission.RemovePolicy(strings.Split(remove, ","))
+		}
+		c.Resource(nil)
 	}))
 	cr.DELETE("/rule", GinHelpHandle(func(c *GinHelp) {
 		// rule转义后 如: x,/x/:w/1,GET,allow 或 x%2C%2Fx%2F%3Aw%2F1%2CGET%2Callow 无法匹配
@@ -291,10 +311,4 @@ func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 	}))
 
 	return cr
-}
-
-func PermissionRulePut() gin.HandlerFunc {
-	return GinHelpHandle(func(c *GinHelp) {
-
-	})
 }
