@@ -4,15 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	elasticsearch "github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/gin-gonic/gin"
 	lib "github.com/maxiloEmmmm/go-tool"
+	"github.com/olivere/elastic/v7"
 	"io"
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -146,14 +144,30 @@ func (config *configIO) Close() error {
 
 func (config *configIO) GetELog() io.ReadWriteCloser {
 	if config.pipe == nil {
-		client, err := elasticsearch.NewClient(elasticsearch.Config{
-			Addresses: []string{Config.Log.Info["address"]},
-		})
-
+		client, err := elastic.NewClient(
+			elastic.SetURL(Config.Log.Info["address"]),
+		)
 		if err != nil {
-			log.Fatal(lib.StringJoin("elastic search err: ", err.Error()))
+			log.Fatal(err.Error())
 		}
-		config.pipe = ElasticSearch{client: client, index: Config.Log.Info["index"]}
+
+		_, _, err = client.Ping(Config.Log.Info["address"]).Do(context.Background())
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		index := Config.Log.Info["index"]
+		exists, err := client.IndexExists(index).Do(context.Background())
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		if !exists {
+			_, err := client.CreateIndex("twitter").BodyString(EsMapping).Do(context.Background())
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		}
+		config.pipe = ElasticSearch{client: client, index: index}
 	}
 	return config.pipe
 }
@@ -187,8 +201,25 @@ func LogClose() error {
 	return configInstance.Close()
 }
 
+const EsMapping = `
+{
+	"settings":{
+		"number_of_shards": 1,
+		"number_of_replicas": 0
+	},
+	"mappings":{
+		"properties":{
+			"@timestamp":{
+				"format":"strict_date_optional_time||epoch_millis",
+				"type":"date"
+				"enabled":true
+			}
+		}
+	}
+}`
+
 type ElasticSearch struct {
-	client *elasticsearch.Client
+	client *elastic.Client
 	index  string
 }
 
@@ -198,25 +229,10 @@ func (e ElasticSearch) Read(p []byte) (n int, err error) {
 
 func (e ElasticSearch) Write(p []byte) (n int, err error) {
 	go func() {
-		res, err := esapi.IndexRequest{
-			Index: e.index,
-			Body:  strings.NewReader(string(p)),
-		}.Do(context.Background(), e.client)
-
+		_, err := e.client.Index().Index(e.index).BodyString(string(p)).Do(context.Background())
 		if err != nil {
 			LogLog(ErrorLevel, AppLogCode, err.Error())
 			return
-		}
-		defer res.Body.Close()
-
-		if res.IsError() {
-			LogLog(ErrorLevel, AppLogCode, res.String())
-		} else {
-			// Deserialize the response into a map.
-			var r map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
-				LogLog(ErrorLevel, AppLogCode, err.Error())
-			}
 		}
 	}()
 	return len(p), nil

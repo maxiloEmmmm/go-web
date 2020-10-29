@@ -6,7 +6,6 @@ require (
 	github.com/casbin/casbin/v2 v2.14.2
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/facebook/ent v0.4.3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/locales v0.13.0
@@ -15,6 +14,7 @@ require (
 	github.com/go-redis/redis/v8 v8.0.0-beta.5
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/maxiloEmmmm/go-tool v0.0.6
+	github.com/olivere/elastic/v7 v7.0.20 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.6.1
