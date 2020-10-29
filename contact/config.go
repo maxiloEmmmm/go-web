@@ -85,7 +85,7 @@ var Config = ConfigMap{
 	}},
 }
 
-var ConfigPath = "./config.yml"
+var ConfigPath = "./config.yaml"
 
 func InitConfig() {
 	configFile, err := ioutil.ReadFile(ConfigPath)
