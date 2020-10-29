@@ -148,23 +148,23 @@ func (config *configIO) GetELog() io.ReadWriteCloser {
 			elastic.SetURL(Config.Log.Info["address"]),
 		)
 		if err != nil {
-			log.Fatal(err.Error())
+			LogLog(ErrorLevel, AppLogCode, err.Error())
 		}
 
 		_, _, err = client.Ping(Config.Log.Info["address"]).Do(context.Background())
 		if err != nil {
-			log.Fatal(err.Error())
+			LogLog(ErrorLevel, AppLogCode, err.Error())
 		}
 
 		index := Config.Log.Info["index"]
 		exists, err := client.IndexExists(index).Do(context.Background())
 		if err != nil {
-			log.Fatal(err.Error())
+			LogLog(ErrorLevel, AppLogCode, err.Error())
 		}
 		if !exists {
 			_, err := client.CreateIndex("twitter").BodyString(EsMapping).Do(context.Background())
 			if err != nil {
-				log.Fatal(err.Error())
+				LogLog(ErrorLevel, AppLogCode, err.Error())
 			}
 		}
 		config.pipe = ElasticSearch{client: client, index: index}
