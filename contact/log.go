@@ -40,12 +40,12 @@ type configIO struct {
 }
 
 type LogInfo struct {
-	Message string
-	Code    string
-	Time    string
-	Level   string
-	Line    int    `json:",omitempty"`
-	File    string `json:",omitempty"`
+	Message string `json:"message"`
+	Code    string `json:"code"`
+	Time    string `json:"time"`
+	Level   string `json:"level"`
+	Line    int    `json:"line,omitempty"`
+	File    string `json:"file,omitempty"`
 }
 
 func (li *LogInfo) RawString() string {
@@ -87,14 +87,15 @@ func (li *LogInfo) Log(code string, message string) *LogInfo {
 
 	li.Code = code
 	li.Message = message
-	li.Time = time.Now().Format("2006-01-02 15:04:05.000")
+	// es default zone utc
+	li.Time = time.Now().UTC().Format("2006-01-02 15:04:05.000")
 	fmt.Fprintf(os.Stdout, "%s\n", li.RawString())
 	configInstance.Write([]byte(li.String()))
 	return li
 }
 
-func LogLog(level string, code string, message string) {
-	fmt.Fprintf(os.Stdout, "%s\n", (&LogInfo{
+func LogLog(level string, code string, message string) (int, error) {
+	return fmt.Fprintf(os.Stdout, "%s\n", (&LogInfo{
 		Message: message,
 		Code:    code,
 		Time:    time.Now().Format("2006-01-02 15:04:05.000"),
@@ -130,6 +131,11 @@ const (
 func (config configIO) Write(p []byte) (n int, err error) {
 	switch Config.Log.Type {
 	case "elastic_search":
+		if engine := config.GetELog(); engine != nil {
+			return config.GetELog().Write(p)
+		} else {
+			return LogLog(ErrorLevel, AppLogCode, string(p))
+		}
 		return config.GetELog().Write(p)
 	case "file":
 		fallthrough
@@ -146,6 +152,7 @@ func (config *configIO) GetELog() io.ReadWriteCloser {
 	if config.pipe == nil {
 		client, err := elastic.NewClient(
 			elastic.SetURL(Config.Log.Info["address"]),
+			elastic.SetSniff(false),
 		)
 		if err != nil {
 			LogLog(ErrorLevel, AppLogCode, err.Error())
@@ -165,7 +172,7 @@ func (config *configIO) GetELog() io.ReadWriteCloser {
 			return nil
 		}
 		if !exists {
-			_, err := client.CreateIndex("twitter").BodyString(EsMapping).Do(context.Background())
+			_, err := client.CreateIndex(index).BodyString(EsMapping).Do(context.Background())
 			if err != nil {
 				LogLog(ErrorLevel, AppLogCode, err.Error())
 				return nil
@@ -209,10 +216,9 @@ const EsMapping = `
 {
 	"mappings":{
 		"properties":{
-			"@timestamp":{
-				"format":"strict_date_optional_time||epoch_millis",
+			"time":{
+				"format":"yyyy-MM-dd HH:mm:ss.SSS||epoch_millis",
 				"type":"date"
-				"enabled":true
 			}
 		}
 	}
