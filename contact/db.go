@@ -129,7 +129,7 @@ func (j JsonField) UnmarshalJSON(data []byte) (err error) {
 }
 
 type JsonArrayField struct {
-	Interface []interface{}
+	Interface interface{}
 }
 
 func (j *JsonArrayField) Scan(value interface{}) (err error) {
