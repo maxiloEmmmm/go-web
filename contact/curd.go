@@ -12,12 +12,19 @@ type CURDFilterFunc func(*GinHelp, interface{}, reflect.Value) reflect.Value
 type CURDListFilterFunc func(*GinHelp, interface{}, interface{}) interface{}
 type CURDFilterCheck func(ginHelp *GinHelp, id string)
 type FieldValueFunc func(interface{}) reflect.Value
+type CURDAfterFilterFunc func(ginHelp *GinHelp, item interface{}, data interface{})
 
 func DefaultFieldValueFunc(v interface{}) reflect.Value {
 	return reflect.ValueOf(v.(string))
 }
 func BoolFieldValueFunc(d interface{}) reflect.Value {
 	return reflect.ValueOf(BoolField{Bool: d.(bool)})
+}
+func JsonArrayFieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(JsonArrayField{Interface: d.([]interface{})})
+}
+func JsonFieldValueFunc(d interface{}) reflect.Value {
+	return reflect.ValueOf(JsonField{Interface: d.(map[string]interface{})})
 }
 func IntFieldValueFunc(d interface{}) reflect.Value {
 	return reflect.ValueOf(d.(int))
@@ -31,7 +38,9 @@ func float64FieldValueFunc(d interface{}) reflect.Value {
 
 type CURDFilter struct {
 	Create       CURDFilterFunc
+	CreateAfter  CURDAfterFilterFunc
 	Patch        CURDFilterFunc
+	PatchAfter   CURDAfterFilterFunc
 	List         CURDFilterFunc
 	ListData     CURDListFilterFunc
 	Delete       CURDFilterFunc
@@ -268,6 +277,10 @@ func (c curd) curdPost(help *GinHelp) {
 	}
 	entSets(&pipe, body.Payload, c.Option.CreateFields, c.Option.FieldValue)
 	item := methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+
+	if c.Option.Filter.CreateAfter != nil {
+		c.Option.Filter.CreateAfter(help, item, body.Payload)
+	}
 	help.Resource(item)
 }
 
@@ -308,6 +321,10 @@ func (c curd) curdPatch(help *GinHelp) {
 		}
 		entSets(&pipe, body.Payload, c.Option.UpdateFields, c.Option.FieldValue)
 		item = methodHelp(pipe, "SaveX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface()
+	}
+
+	if c.Option.Filter.PatchAfter != nil {
+		c.Option.Filter.PatchAfter(help, item, body.Payload)
 	}
 	help.Resource(item)
 }
