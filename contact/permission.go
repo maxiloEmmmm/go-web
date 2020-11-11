@@ -32,8 +32,9 @@ m = g(r.sub, p.sub) && keyMatch2(r.obj, p.obj) && r.act == p.act
 `
 
 type EntPolicyAdapterOption struct {
-	Db  *sql.DB
-	Ctx context.Context
+	Db     *sql.DB
+	Driver string
+	Ctx    context.Context
 }
 
 type entPolicyAdapter struct {
@@ -42,7 +43,7 @@ type entPolicyAdapter struct {
 }
 
 func NewEntPolicyAdapter(option *EntPolicyAdapterOption) (*entPolicyAdapter, error) {
-	client := ent.NewClient(ent.Driver(entsql.OpenDB(DbEngine, option.Db)))
+	client := ent.NewClient(ent.Driver(entsql.OpenDB(option.Driver, option.Db)))
 	err := client.Schema.Create(
 		option.Ctx,
 	)

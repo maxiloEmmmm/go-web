@@ -9,28 +9,33 @@ import (
 	"log"
 )
 
-var DbEngine string
-
 func InitDB(open func(string, string) (*sql.DB, error), mode string) {
 	if mode == "" {
 		mode = Config.App.Mode
 	}
 
 	if cfg, exist := Config.Database[mode]; exist {
-		engine := cfg["engine"]
+		engine := cfg["engine"].(string)
 		if !lib.InArray(&[]string{"mysql", "mssql", "sqlite3", "postgres"}, engine) {
 			engine = "mysql"
 		}
 
-		DbEngine = engine.(string)
-
-		db, err := open(DbEngine, cfg["source"].(string))
+		db, err := open(engine, cfg["source"].(string))
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		db.SetMaxIdleConns(20)
-		db.SetMaxOpenConns(100)
+		if val, has := cfg["maxIdleConns"]; has {
+			db.SetMaxIdleConns(val.(int))
+		} else {
+			db.SetMaxIdleConns(20)
+		}
+
+		if val, has := cfg["maxOpenConns"]; has {
+			db.SetMaxOpenConns(val.(int))
+		} else {
+			db.SetMaxOpenConns(100)
+		}
 
 		if err := db.Ping(); err != nil {
 			log.Fatalln(err)
