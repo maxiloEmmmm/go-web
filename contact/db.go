@@ -95,7 +95,7 @@ func (b BoolField) UnmarshalJSON(data []byte) (err error) {
 }
 
 type JsonField struct {
-	Interface map[string]interface{}
+	Interface interface{}
 }
 
 func (j *JsonField) Scan(value interface{}) (err error) {

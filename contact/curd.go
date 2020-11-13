@@ -21,10 +21,10 @@ func BoolFieldValueFunc(d interface{}) reflect.Value {
 	return reflect.ValueOf(BoolField{Bool: d.(bool)})
 }
 func JsonArrayFieldValueFunc(d interface{}) reflect.Value {
-	return reflect.ValueOf(JsonArrayField{Interface: d.([]interface{})})
+	return reflect.ValueOf(JsonArrayField{Interface: d})
 }
 func JsonFieldValueFunc(d interface{}) reflect.Value {
-	return reflect.ValueOf(JsonField{Interface: d.(map[string]interface{})})
+	return reflect.ValueOf(JsonField{Interface: d})
 }
 func IntFieldValueFunc(d interface{}) reflect.Value {
 	return reflect.ValueOf(d.(int))
