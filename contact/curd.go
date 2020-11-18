@@ -2,7 +2,9 @@ package contact
 
 import (
 	"fmt"
+	"github.com/facebook/ent/dialect/sql"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	go_tool "github.com/maxiloEmmmm/go-tool"
 	"reflect"
 	"strings"
@@ -16,6 +18,10 @@ type CURDAfterFilterFunc func(ginHelp *GinHelp, item interface{}, data interface
 
 func DefaultFieldValueFunc(v interface{}) reflect.Value {
 	return reflect.ValueOf(v.(string))
+}
+func UUIDFieldValueFunc(v interface{}) reflect.Value {
+	u, _ := uuid.Parse(v.(string))
+	return reflect.ValueOf(u)
 }
 func BoolFieldValueFunc(d interface{}) reflect.Value {
 	return reflect.ValueOf(BoolField{Bool: d.(bool)})
@@ -43,6 +49,7 @@ type CURDFilter struct {
 	PatchAfter   CURDAfterFilterFunc
 	List         CURDFilterFunc
 	ListData     CURDListFilterFunc
+	ListOnePipe  CURDFilterFunc
 	Delete       CURDFilterFunc
 	DeleteBefore CURDFilterCheck
 }
@@ -344,10 +351,19 @@ func (c curd) curdOne(help *GinHelp) {
 		Id string `uri:"id"`
 	}{}
 	help.InValidBindUri(&uri)
+
+	pipe := methodHelp(methodHelp(reflect.ValueOf(c.Option.Model), "Query", nil)[0], "Where", []reflect.Value{
+		reflect.ValueOf(func(selector *sql.Selector) {
+			selector.Where(sql.EQ("id", c.Option.IdTransfer(uri.Id).Interface()))
+		}),
+	})[0]
+	if c.Option.Filter.ListOnePipe != nil {
+		pipe = c.Option.Filter.ListOnePipe(help, uri.Id, pipe)
+	}
+
+	pipe = methodHelp(pipe, "FirstX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0]
+
 	help.Resource(
-		methodHelp(reflect.ValueOf(c.Option.Model), "GetX", []reflect.Value{
-			reflect.ValueOf(help.AppContext),
-			c.Option.IdTransfer(uri.Id),
-		})[0].Interface(),
+		pipe.Interface(),
 	)
 }
