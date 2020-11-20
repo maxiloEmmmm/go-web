@@ -20,7 +20,7 @@ var (
 
 func init() {
 	flag.BoolVar(&help, "h", false, "help")
-	flag.StringVar(&ConfigPath, "c", "./config.yml", "config path")
+	flag.StringVar(&ConfigPath, "c", "./config.yaml", "config path")
 	flag.Usage = usage
 }
 

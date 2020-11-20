@@ -190,6 +190,10 @@ func InitPermission(m string, adapter interface{}) {
 		Error.Log("casbin.enforcer", err.Error())
 	}
 
+	if Config.App.Mode != gin.ReleaseMode {
+		Permission.EnableLog(true)
+	}
+
 	if err := Permission.LoadPolicy(); err != nil {
 		Error.Log("casbin.load.policy", err.Error())
 	}
