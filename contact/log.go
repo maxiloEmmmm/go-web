@@ -153,6 +153,7 @@ func (config *configIO) GetELog() io.ReadWriteCloser {
 		client, err := elastic.NewClient(
 			elastic.SetURL(Config.Log.Info["address"]),
 			elastic.SetSniff(false),
+			// goroutine profile issue https://github.com/olivere/elastic/issues/1137
 			// disabled for go github.com/olivere/elastic/v7@v7.0.20/client.go:1060
 			elastic.SetHealthcheck(false),
 		)
@@ -240,7 +241,6 @@ func (e ElasticSearch) Write(p []byte) (n int, err error) {
 		_, err := e.client.Index().Index(e.index).BodyString(string(p)).Do(context.Background())
 		if err != nil {
 			LogLog(ErrorLevel, AppLogCode, err.Error())
-			return
 		}
 	}()
 	return len(p), nil
