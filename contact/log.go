@@ -153,6 +153,8 @@ func (config *configIO) GetELog() io.ReadWriteCloser {
 		client, err := elastic.NewClient(
 			elastic.SetURL(Config.Log.Info["address"]),
 			elastic.SetSniff(false),
+			// disabled for go github.com/olivere/elastic/v7@v7.0.20/client.go:1060
+			elastic.SetHealthcheck(false),
 		)
 		if err != nil {
 			LogLog(ErrorLevel, AppLogCode, err.Error())
