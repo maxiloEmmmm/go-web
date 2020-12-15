@@ -115,6 +115,9 @@ func (j *JwtLib) ForgetToken() {
 	token := j.GenerateToken()
 
 	now := time.Now().Unix()
+	if RedisClient == nil {
+		return
+	}
 	result := RedisClient.SetNX(
 		context.Background(),
 		fmt.Sprintf("jwt_forget:%s", token),
