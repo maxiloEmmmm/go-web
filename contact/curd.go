@@ -147,7 +147,7 @@ func (c curd) curdList(help *GinHelp) {
 		if c.Option.Filter.ListData != nil {
 			data = c.Option.Filter.ListData(help, listPayload, data)
 		}
-		return methodHelp(pipe, "All", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface(),
+		return data,
 			methodHelp(clonePipe, "CountX", []reflect.Value{reflect.ValueOf(help.AppContext)})[0].Interface().(int)
 	})
 }

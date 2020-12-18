@@ -16,14 +16,13 @@ import (
 // CasbinRuleDelete is the builder for deleting a CasbinRule entity.
 type CasbinRuleDelete struct {
 	config
-	hooks      []Hook
-	mutation   *CasbinRuleMutation
-	predicates []predicate.CasbinRule
+	hooks    []Hook
+	mutation *CasbinRuleMutation
 }
 
 // Where adds a new predicate to the delete builder.
 func (crd *CasbinRuleDelete) Where(ps ...predicate.CasbinRule) *CasbinRuleDelete {
-	crd.predicates = append(crd.predicates, ps...)
+	crd.mutation.predicates = append(crd.mutation.predicates, ps...)
 	return crd
 }
 
@@ -75,7 +74,7 @@ func (crd *CasbinRuleDelete) sqlExec(ctx context.Context) (int, error) {
 			},
 		},
 	}
-	if ps := crd.predicates; len(ps) > 0 {
+	if ps := crd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)

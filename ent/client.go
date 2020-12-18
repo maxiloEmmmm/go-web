@@ -138,7 +138,7 @@ func (c *CasbinRuleClient) Create() *CasbinRuleCreate {
 	return &CasbinRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// BulkCreate returns a builder for creating a bulk of CasbinRule entities.
+// CreateBulk returns a builder for creating a bulk of CasbinRule entities.
 func (c *CasbinRuleClient) CreateBulk(builders ...*CasbinRuleCreate) *CasbinRuleCreateBulk {
 	return &CasbinRuleCreateBulk{config: c.config, builders: builders}
 }
@@ -192,11 +192,11 @@ func (c *CasbinRuleClient) Get(ctx context.Context, id int) (*CasbinRule, error)
 
 // GetX is like Get, but panics if an error occurs.
 func (c *CasbinRuleClient) GetX(ctx context.Context, id int) *CasbinRule {
-	cr, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return cr
+	return obj
 }
 
 // Hooks returns the client hooks.

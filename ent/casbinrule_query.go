@@ -21,7 +21,6 @@ type CasbinRuleQuery struct {
 	limit      *int
 	offset     *int
 	order      []OrderFunc
-	unique     []string
 	predicates []predicate.CasbinRule
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -54,23 +53,23 @@ func (crq *CasbinRuleQuery) Order(o ...OrderFunc) *CasbinRuleQuery {
 
 // First returns the first CasbinRule entity in the query. Returns *NotFoundError when no casbinrule was found.
 func (crq *CasbinRuleQuery) First(ctx context.Context) (*CasbinRule, error) {
-	crs, err := crq.Limit(1).All(ctx)
+	nodes, err := crq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(crs) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{casbinrule.Label}
 	}
-	return crs[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (crq *CasbinRuleQuery) FirstX(ctx context.Context) *CasbinRule {
-	cr, err := crq.First(ctx)
+	node, err := crq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return cr
+	return node
 }
 
 // FirstID returns the first CasbinRule id in the query. Returns *NotFoundError when no id was found.
@@ -86,8 +85,8 @@ func (crq *CasbinRuleQuery) FirstID(ctx context.Context) (id int, err error) {
 	return ids[0], nil
 }
 
-// FirstXID is like FirstID, but panics if an error occurs.
-func (crq *CasbinRuleQuery) FirstXID(ctx context.Context) int {
+// FirstIDX is like FirstID, but panics if an error occurs.
+func (crq *CasbinRuleQuery) FirstIDX(ctx context.Context) int {
 	id, err := crq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -97,13 +96,13 @@ func (crq *CasbinRuleQuery) FirstXID(ctx context.Context) int {
 
 // Only returns the only CasbinRule entity in the query, returns an error if not exactly one entity was returned.
 func (crq *CasbinRuleQuery) Only(ctx context.Context) (*CasbinRule, error) {
-	crs, err := crq.Limit(2).All(ctx)
+	nodes, err := crq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(crs) {
+	switch len(nodes) {
 	case 1:
-		return crs[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{casbinrule.Label}
 	default:
@@ -113,11 +112,11 @@ func (crq *CasbinRuleQuery) Only(ctx context.Context) (*CasbinRule, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (crq *CasbinRuleQuery) OnlyX(ctx context.Context) *CasbinRule {
-	cr, err := crq.Only(ctx)
+	node, err := crq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return cr
+	return node
 }
 
 // OnlyID returns the only CasbinRule id in the query, returns an error if not exactly one id was returned.
@@ -156,11 +155,11 @@ func (crq *CasbinRuleQuery) All(ctx context.Context) ([]*CasbinRule, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (crq *CasbinRuleQuery) AllX(ctx context.Context) []*CasbinRule {
-	crs, err := crq.All(ctx)
+	nodes, err := crq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return crs
+	return nodes
 }
 
 // IDs executes the query and returns a list of CasbinRule ids.
@@ -218,12 +217,14 @@ func (crq *CasbinRuleQuery) ExistX(ctx context.Context) bool {
 // Clone returns a duplicate of the query builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
 func (crq *CasbinRuleQuery) Clone() *CasbinRuleQuery {
+	if crq == nil {
+		return nil
+	}
 	return &CasbinRuleQuery{
 		config:     crq.config,
 		limit:      crq.limit,
 		offset:     crq.offset,
 		order:      append([]OrderFunc{}, crq.order...),
-		unique:     append([]string{}, crq.unique...),
 		predicates: append([]predicate.CasbinRule{}, crq.predicates...),
 		// clone intermediate query.
 		sql:  crq.sql.Clone(),
@@ -362,7 +363,7 @@ func (crq *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := crq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, casbinrule.ValidColumn)
 			}
 		}
 	}
@@ -381,7 +382,7 @@ func (crq *CasbinRuleQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range crq.order {
-		p(selector)
+		p(selector, casbinrule.ValidColumn)
 	}
 	if offset := crq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -616,8 +617,17 @@ func (crgb *CasbinRuleGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (crgb *CasbinRuleGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range crgb.fields {
+		if !casbinrule.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := crgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := crgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := crgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -630,7 +640,7 @@ func (crgb *CasbinRuleGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(crgb.fields)+len(crgb.fns))
 	columns = append(columns, crgb.fields...)
 	for _, fn := range crgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, casbinrule.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(crgb.fields...)
 }
@@ -850,6 +860,11 @@ func (crs *CasbinRuleSelect) BoolX(ctx context.Context) bool {
 }
 
 func (crs *CasbinRuleSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range crs.fields {
+		if !casbinrule.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := crs.sqlQuery().Query()
 	if err := crs.driver.Query(ctx, query, args, rows); err != nil {

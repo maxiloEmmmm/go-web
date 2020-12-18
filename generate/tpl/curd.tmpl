@@ -1,0 +1,167 @@
+{{ define "curd" }}
+{{/* Add the base header for the generated file */}}
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+
+import (
+    contact "github.com/maxiloEmmmm/go-web/contact"
+    "github.com/google/uuid"
+    "strconv"
+)
+
+{{ $model := "app" }}
+
+func stringId(id string) string {
+    return id
+}
+
+func intId(id string) int {
+    val, _ := strconv.Atoi(id)
+    return val
+}
+
+func int32Id(id string) int32 {
+    return int32(int64Id(id))
+}
+
+func int64Id(id string) int64 {
+    val, _ := strconv.ParseInt(id, 10, 64)
+    return val
+}
+
+func uuidId(id string) uuid.UUID {
+    u, _ := uuid.Parse(id)
+	return u
+}
+
+func newApi(client *Client, opt *ApiOption) Api {
+    obj := Api{Client: client}
+
+    if opt != nil {
+        if len(opt.Fields) > 0 {
+            createFields, has := opt.Fields["Create"]
+            af := ActionFields{
+                Has: has,
+            }
+            for _, field := range createFields {
+                af.Fields[field] = true
+            }
+            obj.Fields.Create = af
+
+            updateFields, has := opt.Fields["Update"]
+            af = ActionFields{
+                Has: has,
+            }
+            for _, field := range updateFields {
+                af.Fields[field] = true
+            }
+            obj.Fields.Update = af
+        }
+    }
+    return obj
+}
+
+type ApiOption struct {
+    Fields map[string][]string
+}
+
+type Api struct {
+    Fields struct {
+        Create ActionFields
+        Update ActionFields
+    }
+    Client *Client
+}
+
+type ActionFields struct {
+    Has bool
+    Fields map[string]bool
+}
+
+{{ range $n := filterNode $.Nodes }}
+    {{ $fields := $n.Fields }}
+
+    {{ $receiver := $n.Receiver }}
+    {{ $apiStruct := print $n.Name "Api" }}
+    {{ $modelItem := print "c.Client." $n.Name }}
+    {{ $struct := print $n.Name "Api" }}
+
+    type {{ $struct }} Api
+
+    func New{{ $struct }}(client *Client, opt *ApiOption) *{{ $struct }} {
+        api := {{ $struct }}(newApi(client, opt))
+        return &api
+    }
+
+    func (c *{{$apiStruct}}) List(help *contact.GinHelp) {
+    	help.ResourcePage(func(start int, size int) (interface{}, int) {
+    	    pipe := {{ $modelItem }}.Query()
+    	    clonePipe := pipe.Clone()
+
+    	    pipe = pipe.Offset(start).Limit(size)
+    	    data := pipe.AllX(help.AppContext)
+
+    		return data, clonePipe.CountX(help.AppContext)
+    	})
+    }
+
+    func (c *{{$apiStruct}}) Destroy(help *contact.GinHelp) {
+    	uri := &struct {
+    		Id string `uri:"id"`
+    	}{}
+    	help.InValidBindUri(uri)
+
+    	{{ $modelItem }}.DeleteOneID({{ $n.ID.Type }}Id(uri.Id)).ExecX(help.AppContext)
+    	help.ResourceDelete()
+    }
+
+    func (c *{{$apiStruct}}) Create(help *contact.GinHelp) {
+    	body := &struct {
+    		Payload {{ $n.Name }}
+    	}{}
+    	help.InValidBind(body)
+
+    	pipe := {{ $modelItem }}.Create()
+    	{{- range $f := $fields }}
+            if !c.Fields.Create.Has || c.Fields.Create.Fields["{{ $f.StructField }}"] {
+                pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
+            }
+    	{{- end }}
+    	pipe.SaveX(help.AppContext)
+    	help.Resource(pipe.SaveX(help.AppContext))
+    }
+
+    func (c *{{$apiStruct}}) Update(help *contact.GinHelp) {
+    	uri := struct {
+    		Id string `uri:"id"`
+    	}{}
+    	help.InValidBindUri(&uri)
+
+    	body := &struct {
+    		Payload {{ $n.Name }}
+    	}{}
+
+    	item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
+    	if item == nil {
+    		help.InValid("resource", "not found")
+    	} else {
+    	    pipe := item.Update()
+            {{- range $f := $fields }}
+                if !c.Fields.Update.Has || c.Fields.Update.Fields["{{ $f.StructField }}"] {
+                    pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
+                }
+            {{- end }}
+    	    pipe.SaveX(help.AppContext)
+    	}
+    	help.Resource(item)
+    }
+
+    func (c *{{$apiStruct}}) Get(help *contact.GinHelp) {
+    	uri := struct {
+    		Id string `uri:"id"`
+    	}{}
+    	help.InValidBindUri(&uri)
+    	help.Resource({{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id)))
+    }
+{{ end }}
+{{ end }}

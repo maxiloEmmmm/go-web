@@ -116,20 +116,24 @@ func (crc *CasbinRuleCreate) Mutation() *CasbinRuleMutation {
 
 // Save creates the CasbinRule in the database.
 func (crc *CasbinRuleCreate) Save(ctx context.Context) (*CasbinRule, error) {
-	if err := crc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *CasbinRule
 	)
+	crc.defaults()
 	if len(crc.hooks) == 0 {
+		if err = crc.check(); err != nil {
+			return nil, err
+		}
 		node, err = crc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*CasbinRuleMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = crc.check(); err != nil {
+				return nil, err
 			}
 			crc.mutation = mutation
 			node, err = crc.sqlSave(ctx)
@@ -155,7 +159,36 @@ func (crc *CasbinRuleCreate) SaveX(ctx context.Context) *CasbinRule {
 	return v
 }
 
-func (crc *CasbinRuleCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (crc *CasbinRuleCreate) defaults() {
+	if _, ok := crc.mutation.V0(); !ok {
+		v := casbinrule.DefaultV0
+		crc.mutation.SetV0(v)
+	}
+	if _, ok := crc.mutation.V1(); !ok {
+		v := casbinrule.DefaultV1
+		crc.mutation.SetV1(v)
+	}
+	if _, ok := crc.mutation.V2(); !ok {
+		v := casbinrule.DefaultV2
+		crc.mutation.SetV2(v)
+	}
+	if _, ok := crc.mutation.V3(); !ok {
+		v := casbinrule.DefaultV3
+		crc.mutation.SetV3(v)
+	}
+	if _, ok := crc.mutation.V4(); !ok {
+		v := casbinrule.DefaultV4
+		crc.mutation.SetV4(v)
+	}
+	if _, ok := crc.mutation.V5(); !ok {
+		v := casbinrule.DefaultV5
+		crc.mutation.SetV5(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (crc *CasbinRuleCreate) check() error {
 	if _, ok := crc.mutation.PType(); !ok {
 		return &ValidationError{Name: "PType", err: errors.New("ent: missing required field \"PType\"")}
 	}
@@ -164,54 +197,30 @@ func (crc *CasbinRuleCreate) preSave() error {
 			return &ValidationError{Name: "PType", err: fmt.Errorf("ent: validator failed for field \"PType\": %w", err)}
 		}
 	}
-	if _, ok := crc.mutation.V0(); !ok {
-		v := casbinrule.DefaultV0
-		crc.mutation.SetV0(v)
-	}
 	if v, ok := crc.mutation.V0(); ok {
 		if err := casbinrule.V0Validator(v); err != nil {
 			return &ValidationError{Name: "v0", err: fmt.Errorf("ent: validator failed for field \"v0\": %w", err)}
 		}
-	}
-	if _, ok := crc.mutation.V1(); !ok {
-		v := casbinrule.DefaultV1
-		crc.mutation.SetV1(v)
 	}
 	if v, ok := crc.mutation.V1(); ok {
 		if err := casbinrule.V1Validator(v); err != nil {
 			return &ValidationError{Name: "v1", err: fmt.Errorf("ent: validator failed for field \"v1\": %w", err)}
 		}
 	}
-	if _, ok := crc.mutation.V2(); !ok {
-		v := casbinrule.DefaultV2
-		crc.mutation.SetV2(v)
-	}
 	if v, ok := crc.mutation.V2(); ok {
 		if err := casbinrule.V2Validator(v); err != nil {
 			return &ValidationError{Name: "v2", err: fmt.Errorf("ent: validator failed for field \"v2\": %w", err)}
 		}
-	}
-	if _, ok := crc.mutation.V3(); !ok {
-		v := casbinrule.DefaultV3
-		crc.mutation.SetV3(v)
 	}
 	if v, ok := crc.mutation.V3(); ok {
 		if err := casbinrule.V3Validator(v); err != nil {
 			return &ValidationError{Name: "v3", err: fmt.Errorf("ent: validator failed for field \"v3\": %w", err)}
 		}
 	}
-	if _, ok := crc.mutation.V4(); !ok {
-		v := casbinrule.DefaultV4
-		crc.mutation.SetV4(v)
-	}
 	if v, ok := crc.mutation.V4(); ok {
 		if err := casbinrule.V4Validator(v); err != nil {
 			return &ValidationError{Name: "v4", err: fmt.Errorf("ent: validator failed for field \"v4\": %w", err)}
 		}
-	}
-	if _, ok := crc.mutation.V5(); !ok {
-		v := casbinrule.DefaultV5
-		crc.mutation.SetV5(v)
 	}
 	if v, ok := crc.mutation.V5(); ok {
 		if err := casbinrule.V5Validator(v); err != nil {
@@ -222,7 +231,7 @@ func (crc *CasbinRuleCreate) preSave() error {
 }
 
 func (crc *CasbinRuleCreate) sqlSave(ctx context.Context) (*CasbinRule, error) {
-	cr, _spec := crc.createSpec()
+	_node, _spec := crc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, crc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
@@ -230,13 +239,13 @@ func (crc *CasbinRuleCreate) sqlSave(ctx context.Context) (*CasbinRule, error) {
 		return nil, err
 	}
 	id := _spec.ID.Value.(int64)
-	cr.ID = int(id)
-	return cr, nil
+	_node.ID = int(id)
+	return _node, nil
 }
 
 func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 	var (
-		cr    = &CasbinRule{config: crc.config}
+		_node = &CasbinRule{config: crc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: casbinrule.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -251,7 +260,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldPType,
 		})
-		cr.PType = value
+		_node.PType = value
 	}
 	if value, ok := crc.mutation.V0(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -259,7 +268,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV0,
 		})
-		cr.V0 = value
+		_node.V0 = value
 	}
 	if value, ok := crc.mutation.V1(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -267,7 +276,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV1,
 		})
-		cr.V1 = value
+		_node.V1 = value
 	}
 	if value, ok := crc.mutation.V2(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -275,7 +284,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV2,
 		})
-		cr.V2 = value
+		_node.V2 = value
 	}
 	if value, ok := crc.mutation.V3(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -283,7 +292,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV3,
 		})
-		cr.V3 = value
+		_node.V3 = value
 	}
 	if value, ok := crc.mutation.V4(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -291,7 +300,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV4,
 		})
-		cr.V4 = value
+		_node.V4 = value
 	}
 	if value, ok := crc.mutation.V5(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -299,9 +308,9 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: casbinrule.FieldV5,
 		})
-		cr.V5 = value
+		_node.V5 = value
 	}
-	return cr, _spec
+	return _node, _spec
 }
 
 // CasbinRuleCreateBulk is the builder for creating a bulk of CasbinRule entities.
@@ -318,13 +327,14 @@ func (crcb *CasbinRuleCreateBulk) Save(ctx context.Context) ([]*CasbinRule, erro
 	for i := range crcb.builders {
 		func(i int, root context.Context) {
 			builder := crcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*CasbinRuleMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

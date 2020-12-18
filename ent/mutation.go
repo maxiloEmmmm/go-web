@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
+	"github.com/maxiloEmmmm/go-web/ent/predicate"
 
 	"github.com/facebook/ent"
 )
@@ -41,6 +42,7 @@ type CasbinRuleMutation struct {
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*CasbinRule, error)
+	predicates    []predicate.CasbinRule
 }
 
 var _ ent.Mutation = (*CasbinRuleMutation)(nil)
@@ -48,7 +50,7 @@ var _ ent.Mutation = (*CasbinRuleMutation)(nil)
 // casbinruleOption allows to manage the mutation configuration using functional options.
 type casbinruleOption func(*CasbinRuleMutation)
 
-// newCasbinRuleMutation creates new mutation for $n.Name.
+// newCasbinRuleMutation creates new mutation for CasbinRule.
 func newCasbinRuleMutation(c config, op Op, opts ...casbinruleOption) *CasbinRuleMutation {
 	m := &CasbinRuleMutation{
 		config:        c,
