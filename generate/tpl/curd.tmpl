@@ -39,22 +39,12 @@ func newApi(client *Client, opt *ApiOption) Api {
 
     if opt != nil {
         if len(opt.Fields) > 0 {
-            createFields, has := opt.Fields["Create"]
-            af := ActionFields{
-                Has: has,
-            }
-            for _, field := range createFields {
-                af.Fields[field] = true
-            }
+            af := ActionFields{}
+            af.SetFields(opt.Fields["Create"])
             obj.Fields.Create = af
 
-            updateFields, has := opt.Fields["Update"]
-            af = ActionFields{
-                Has: has,
-            }
-            for _, field := range updateFields {
-                af.Fields[field] = true
-            }
+            af = ActionFields{}
+            af.SetFields(opt.Fields["Update"])
             obj.Fields.Update = af
         }
     }
@@ -78,18 +68,25 @@ type ActionFields struct {
     Fields map[string]bool
 }
 
+func (af *ActionFields)SetFields(fields []string) {
+    af.Has = true
+    af.Fields = make(map[string]bool, len(fields))
+    for _, field := range fields {
+        af.Fields[field] = true
+    }
+}
+
 {{ range $n := filterNode $.Nodes }}
     {{ $fields := $n.Fields }}
 
     {{ $receiver := $n.Receiver }}
     {{ $apiStruct := print $n.Name "Api" }}
     {{ $modelItem := print "c.Client." $n.Name }}
-    {{ $struct := print $n.Name "Api" }}
 
-    type {{ $struct }} Api
+    type {{ $apiStruct }} Api
 
-    func New{{ $struct }}(client *Client, opt *ApiOption) *{{ $struct }} {
-        api := {{ $struct }}(newApi(client, opt))
+    func New{{ $apiStruct }}(client *Client, opt *ApiOption) *{{ $apiStruct }} {
+        api := {{ $apiStruct }}(newApi(client, opt))
         return &api
     }
 
