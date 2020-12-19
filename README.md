@@ -40,4 +40,9 @@ debug:
   source: root:pass@tcp(localhost:3306)/test
 ```
 
+## generate
+```shell script
+go run generate/*.go ./ent/schame
+```
+
 
