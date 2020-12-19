@@ -8,29 +8,10 @@ import (
     "github.com/google/uuid"
     "github.com/gin-gonic/gin"
     go_tool "github.com/maxiloEmmmm/go-tool"
-    "strconv"
     "strings"
 )
 
 {{ $model := "app" }}
-
-func stringId(id string) string {
-    return id
-}
-
-func intId(id string) int {
-    val, _ := strconv.Atoi(id)
-    return val
-}
-
-func int32Id(id string) int32 {
-    return int32(int64Id(id))
-}
-
-func int64Id(id string) int64 {
-    val, _ := strconv.ParseInt(id, 10, 64)
-    return val
-}
 
 func uuidId(id string) uuid.UUID {
     u, _ := uuid.Parse(id)
@@ -175,11 +156,11 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
 
     func (c *{{$apiStruct}}) Delete(help *contact.GinHelp) {
         uri := &struct {
-            Id string `uri:"id"`
+            Id {{ $n.ID.Type }} `uri:"id"`
         }{}
         help.InValidBindUri(uri)
 
-        item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
+        item := {{ $modelItem }}.GetX(help.AppContext, uri.Id)
         if c.Filter.DeleteBefore != nil {
             c.Filter.DeleteBefore(help, item)
         }
@@ -215,7 +196,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
 
     func (c *{{$apiStruct}}) Update(help *contact.GinHelp) {
         uri := struct {
-            Id string `uri:"id"`
+            Id {{ $n.ID.Type }} `uri:"id"`
         }{}
         help.InValidBindUri(&uri)
 
@@ -223,7 +204,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
             Payload {{ $n.Name }}
         }{}
 
-        item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
+        item := {{ $modelItem }}.GetX(help.AppContext, uri.Id)
         if item == nil {
             help.InValid("resource", "not found")
         } else {
@@ -246,11 +227,11 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
 
     func (c *{{$apiStruct}}) Get(help *contact.GinHelp) {
         uri := struct {
-            Id string `uri:"id"`
+            Id {{ $n.ID.Type }} `uri:"id"`
         }{}
         help.InValidBindUri(&uri)
 
-        pipe := {{ $modelItem }}.Query().Where({{ $n.Package }}.ID({{ $n.ID.Type }}Id(uri.Id)))
+        pipe := {{ $modelItem }}.Query().Where({{ $n.Package }}.ID(uri.Id))
         if c.Filter.GetPipe != nil {
             c.Filter.GetPipe(help, pipe)
         }
