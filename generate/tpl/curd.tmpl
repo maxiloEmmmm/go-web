@@ -6,7 +6,10 @@
 import (
     contact "github.com/maxiloEmmmm/go-web/contact"
     "github.com/google/uuid"
+    "github.com/gin-gonic/gin"
+    go_tool "github.com/maxiloEmmmm/go-tool"
     "strconv"
+    "strings"
 )
 
 {{ $model := "app" }}
@@ -34,8 +37,8 @@ func uuidId(id string) uuid.UUID {
 	return u
 }
 
-func newApi(client *Client, opt *ApiOption) Api {
-    obj := Api{Client: client}
+func newApi(client *Client, opt *ApiOption) *Api {
+    obj := &Api{Client: client}
 
     if opt != nil {
         if len(opt.Fields) > 0 {
@@ -76,89 +79,182 @@ func (af *ActionFields)SetFields(fields []string) {
     }
 }
 
-{{ range $n := filterNode $.Nodes }}
+{{ $nodes := filterNode $.Nodes }}
+
+type Endpoint interface {
+    List(*contact.GinHelp)
+    Update(*contact.GinHelp)
+    Create(*contact.GinHelp)
+    Get(*contact.GinHelp)
+    Delete(*contact.GinHelp)
+}
+
+type CurdBuilder struct {
+    Apis struct {
+        {{ range $n := $nodes }}
+            {{ $n.Name }} *{{ $n.Name }}Api
+        {{ end }}
+    }
+}
+
+func NewCurdBuilder() *CurdBuilder {
+    cb := &CurdBuilder{}
+    {{ range $n := $nodes }}
+        cb.Apis.{{ $n.Name }} = &{{ $n.Name }}Api{}
+    {{ end }}
+    return cb
+}
+
+func (cb *CurdBuilder)Route(prefix string, r gin.IRouter) *gin.RouterGroup {
+    if !strings.HasPrefix("/", prefix) {
+        prefix = go_tool.StringJoin("/", prefix)
+    }
+    g := r.Group(prefix)
+
+    {{ range $n := $nodes }}
+        cb.Group(g, "{{ $n.Package }}", cb.Apis.{{ $n.Name }})
+    {{ end }}
+
+    return g
+}
+
+func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
+    apiGroup := group.Group(path)
+    apiGroup.GET("", contact.GinHelpHandle(api.List))
+    apiGroup.GET("/:id", contact.GinHelpHandle(api.Get))
+    apiGroup.POST("", contact.GinHelpHandle(api.Create))
+    apiGroup.PATCH("/:id", contact.GinHelpHandle(api.Update))
+    apiGroup.DELETE("/:id", contact.GinHelpHandle(api.Delete))
+}
+
+{{ range $n := $nodes }}
     {{ $fields := $n.Fields }}
 
     {{ $receiver := $n.Receiver }}
     {{ $apiStruct := print $n.Name "Api" }}
     {{ $modelItem := print "c.Client." $n.Name }}
 
-    type {{ $apiStruct }} Api
+    type {{ $apiStruct }} struct {
+        *Api
+        Filter {{ $apiStruct }}Filter
+    }
+
+    type {{ $apiStruct }}Filter struct {
+        CreatePipe func(help *contact.GinHelp, createPipe *{{ $n.Name }}Create)
+        CreateAfter func(help *contact.GinHelp, item *{{ $n.Name }})
+        UpdatePipe func(help *contact.GinHelp, updatePipe *{{ $n.Name }}UpdateOne)
+        UpdateAfter func(help *contact.GinHelp, item *{{ $n.Name }})
+        ListPipe func(help *contact.GinHelp, listPipe *{{ $n.Name }}Query)
+        ListData func(help *contact.GinHelp, items []*{{ $n.Name }}) interface{}
+        DeleteBefore func(help *contact.GinHelp, item *{{ $n.Name }})
+        GetPipe func(help *contact.GinHelp, getPipe *{{ $n.Name }}Query)
+    }
 
     func New{{ $apiStruct }}(client *Client, opt *ApiOption) *{{ $apiStruct }} {
-        api := {{ $apiStruct }}(newApi(client, opt))
-        return &api
+        return &{{ $apiStruct }}{Api: newApi(client, opt)}
     }
 
     func (c *{{$apiStruct}}) List(help *contact.GinHelp) {
-    	help.ResourcePage(func(start int, size int) (interface{}, int) {
-    	    pipe := {{ $modelItem }}.Query()
-    	    clonePipe := pipe.Clone()
+        help.ResourcePage(func(start int, size int) (interface{}, int) {
+            pipe := {{ $modelItem }}.Query()
+            if c.Filter.ListPipe != nil {
+                c.Filter.ListPipe(help, pipe)
+            }
+            clonePipe := pipe.Clone()
 
-    	    pipe = pipe.Offset(start).Limit(size)
-    	    data := pipe.AllX(help.AppContext)
+            pipe = pipe.Offset(start).Limit(size)
+            items := pipe.AllX(help.AppContext)
 
-    		return data, clonePipe.CountX(help.AppContext)
-    	})
+            var data interface{} = items
+            if c.Filter.ListData != nil {
+                data = c.Filter.ListData(help, items)
+            }
+            return data, clonePipe.CountX(help.AppContext)
+        })
     }
 
-    func (c *{{$apiStruct}}) Destroy(help *contact.GinHelp) {
-    	uri := &struct {
-    		Id string `uri:"id"`
-    	}{}
-    	help.InValidBindUri(uri)
+    func (c *{{$apiStruct}}) Delete(help *contact.GinHelp) {
+        uri := &struct {
+            Id string `uri:"id"`
+        }{}
+        help.InValidBindUri(uri)
 
-    	{{ $modelItem }}.DeleteOneID({{ $n.ID.Type }}Id(uri.Id)).ExecX(help.AppContext)
-    	help.ResourceDelete()
+        item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
+        if c.Filter.DeleteBefore != nil {
+            c.Filter.DeleteBefore(help, item)
+        }
+        {{ $modelItem }}.DeleteOne(item).ExecX(help.AppContext)
+        help.ResourceDelete()
     }
 
     func (c *{{$apiStruct}}) Create(help *contact.GinHelp) {
-    	body := &struct {
-    		Payload {{ $n.Name }}
-    	}{}
-    	help.InValidBind(body)
+        body := &struct {
+            Payload {{ $n.Name }}
+        }{}
+        help.InValidBind(body)
 
-    	pipe := {{ $modelItem }}.Create()
-    	{{- range $f := $fields }}
+        pipe := {{ $modelItem }}.Create()
+        {{- range $f := $fields }}
             if !c.Fields.Create.Has || c.Fields.Create.Fields["{{ $f.StructField }}"] {
                 pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
             }
-    	{{- end }}
-    	pipe.SaveX(help.AppContext)
-    	help.Resource(pipe.SaveX(help.AppContext))
+        {{- end }}
+
+        if c.Filter.CreatePipe != nil {
+            c.Filter.CreatePipe(help, pipe)
+        }
+
+        item := pipe.SaveX(help.AppContext)
+
+        if c.Filter.CreateAfter != nil {
+            c.Filter.CreateAfter(help, item)
+        }
+
+        help.Resource(item)
     }
 
     func (c *{{$apiStruct}}) Update(help *contact.GinHelp) {
-    	uri := struct {
-    		Id string `uri:"id"`
-    	}{}
-    	help.InValidBindUri(&uri)
+        uri := struct {
+            Id string `uri:"id"`
+        }{}
+        help.InValidBindUri(&uri)
 
-    	body := &struct {
-    		Payload {{ $n.Name }}
-    	}{}
+        body := &struct {
+            Payload {{ $n.Name }}
+        }{}
 
-    	item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
-    	if item == nil {
-    		help.InValid("resource", "not found")
-    	} else {
-    	    pipe := item.Update()
+        item := {{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id))
+        if item == nil {
+            help.InValid("resource", "not found")
+        } else {
+            pipe := item.Update()
             {{- range $f := $fields }}
                 if !c.Fields.Update.Has || c.Fields.Update.Fields["{{ $f.StructField }}"] {
                     pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
                 }
             {{- end }}
-    	    pipe.SaveX(help.AppContext)
-    	}
-    	help.Resource(item)
+            if c.Filter.UpdatePipe != nil {
+                c.Filter.UpdatePipe(help, pipe)
+            }
+            item = pipe.SaveX(help.AppContext)
+            if c.Filter.UpdateAfter != nil {
+                c.Filter.UpdateAfter(help, item)
+            }
+        }
+        help.Resource(item)
     }
 
     func (c *{{$apiStruct}}) Get(help *contact.GinHelp) {
-    	uri := struct {
-    		Id string `uri:"id"`
-    	}{}
-    	help.InValidBindUri(&uri)
-    	help.Resource({{ $modelItem }}.GetX(help.AppContext, {{ $n.ID.Type }}Id(uri.Id)))
+        uri := struct {
+            Id string `uri:"id"`
+        }{}
+        help.InValidBindUri(&uri)
+
+        pipe := {{ $modelItem }}.Query().Where({{ $n.Package }}.ID({{ $n.ID.Type }}Id(uri.Id)))
+        if c.Filter.GetPipe != nil {
+            c.Filter.GetPipe(help, pipe)
+        }
+        help.Resource(pipe.FirstX(help.AppContext))
     }
 {{ end }}
 {{ end }}
