@@ -79,6 +79,7 @@ if err := client.Schema.Create(context.Background()); err != nil {
 engine := gin.Default()
 curd := ent.NewCurdBuilder(client)
 curd.Route("/api", engine)
+engine.Run(":8000")
 ```
     
 ```shell script
