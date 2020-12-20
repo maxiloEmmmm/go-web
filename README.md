@@ -40,9 +40,53 @@ debug:
   source: root:pass@tcp(localhost:3306)/test
 ```
 
-## generate
-```shell script
-go run generate/*.go ./ent/schame
-```
+## <span id="generate">Generate</span>
+1. touch gen.go
+    ```go
+    //go:generate go run github.com/maxiloEmmmm/go-web/generate {{ent_schema_path}}
+    ```
+2. generate
+    ```shell script
+    go generate gen.go
+    ```
+
+## curd
+1. entc init User
+2. edit User schema (must include id)
+    ```go
+    func (User) Fields() []ent.Field {
+        return []ent.Field{
+            field.Int("id"),
+            field.String("username"),
+            field.String("password"),
+        }
+    }
+    ```
+3. [generate](#generate)
+4. gin demo
+    ```go
+    // ent
+    client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+    if err != nil {
+        log.Fatalf("failed opening connection to sqlite: %v", err)
+    }
+    defer client.Close()
+    // Run the auto migration tool.
+    if err := client.Schema.Create(context.Background()); err != nil {
+        log.Fatalf("failed creating schema resources: %v", err)
+    }
+    
+    engine := gin.Default()
+    curd := ent.NewCurdBuilder(client)
+    curd.Route("/api", engine)
+    ```
+    
+    ```shell script
+    [GIN-debug] GET    /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+    [GIN-debug] GET    /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+    [GIN-debug] POST   /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+    [GIN-debug] PATCH  /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+    [GIN-debug] DELETE /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+    ```
 
 

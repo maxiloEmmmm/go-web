@@ -78,10 +78,10 @@ type CurdBuilder struct {
     }
 }
 
-func NewCurdBuilder() *CurdBuilder {
+func NewCurdBuilder(client *Client) *CurdBuilder {
     cb := &CurdBuilder{}
     {{ range $n := $nodes }}
-        cb.Apis.{{ $n.Name }} = &{{ $n.Name }}Api{}
+        cb.Apis.{{ $n.Name }} = New{{ $n.Name }}Api(client, nil)
     {{ end }}
     return cb
 }
