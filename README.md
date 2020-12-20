@@ -41,16 +41,6 @@ debug:
 ```
 
 ## <span id="generate">Generate</span>
-1. touch gen.go
-    ```go
-    //go:generate go run github.com/maxiloEmmmm/go-web/generate {{ent_schema_path}}
-    ```
-2. generate
-    ```shell script
-    go generate gen.go
-    ```
-
-## curd
 1. entc init User
 2. edit User schema (must include id)
     ```go
@@ -62,8 +52,18 @@ debug:
         }
     }
     ```
-3. [generate](#generate)
-4. gin demo
+3. touch gen.go
+    ```go
+    //go:generate go run github.com/maxiloEmmmm/go-web/generate {{ent_schema_path}}
+    ```
+4. generate
+    ```shell script
+    go generate gen.go
+    ```
+
+## curd
+
+### gin
     ```go
     // ent
     client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
