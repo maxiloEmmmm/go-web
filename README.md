@@ -64,29 +64,29 @@ debug:
 ## curd
 
 ### gin
-    ```go
-    // ent
-    client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-    if err != nil {
-        log.Fatalf("failed opening connection to sqlite: %v", err)
-    }
-    defer client.Close()
-    // Run the auto migration tool.
-    if err := client.Schema.Create(context.Background()); err != nil {
-        log.Fatalf("failed creating schema resources: %v", err)
-    }
+```go
+// ent
+client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+if err != nil {
+    log.Fatalf("failed opening connection to sqlite: %v", err)
+}
+defer client.Close()
+// Run the auto migration tool.
+if err := client.Schema.Create(context.Background()); err != nil {
+    log.Fatalf("failed creating schema resources: %v", err)
+}
+
+engine := gin.Default()
+curd := ent.NewCurdBuilder(client)
+curd.Route("/api", engine)
+```
     
-    engine := gin.Default()
-    curd := ent.NewCurdBuilder(client)
-    curd.Route("/api", engine)
-    ```
-    
-    ```shell script
-    [GIN-debug] GET    /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
-    [GIN-debug] GET    /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
-    [GIN-debug] POST   /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
-    [GIN-debug] PATCH  /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
-    [GIN-debug] DELETE /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
-    ```
+```shell script
+[GIN-debug] GET    /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+[GIN-debug] GET    /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+[GIN-debug] POST   /api/user                 --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+[GIN-debug] PATCH  /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+[GIN-debug] DELETE /api/user/:id             --> github.com/maxiloEmmmm/go-web/contact.GinHelpHandle.func1 (3 handlers)
+```
 
 
