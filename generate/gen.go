@@ -24,6 +24,9 @@ func main() {
 						}
 						return pps
 					},
+					"hasEdges": func(p *gen.Type) bool {
+						return len(p.Edges) > 0
+					},
 				}).
 				Parse(string(MustAsset("tpl/curd.tmpl")))),
 		},

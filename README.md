@@ -80,7 +80,7 @@ debug:
     
     engine := gin.Default()
     curd := ent.NewCurdBuilder(client)
-    curd.Route("/api", engine)
+    curd.Route("/api", engine, nil)
     engine.Run(":8000")
     ```
         
