@@ -5,5 +5,6 @@ package runtime
 // The schema-stitching logic is generated in github.com/maxiloEmmmm/go-web/ent/runtime.go
 
 const (
-	Version = "(devel)" // Version of ent codegen.
+	Version = "v0.5.3"                                          // Version of ent codegen.
+	Sum     = "h1:YT3Sl28n7gGGOkQeYgeJsZmizJ1Iiy7psgkOtEk0aq4=" // Sum of ent codegen.
 )

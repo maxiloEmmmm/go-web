@@ -121,6 +121,8 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
     type {{ $apiStruct }} struct {
         *Api
         Filter {{ $apiStruct }}Filter
+        SkipCreateAutoEdge bool
+        SkipUpdateAutoEdge bool
     }
 
     type {{ $apiStruct }}Filter struct {
@@ -184,6 +186,16 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
             }
         {{- end }}
 
+        {{- if gt ( len $n.Edges ) 0 }}
+        if !c.SkipCreateAutoEdge {
+            {{- range $e := $n.Edges }}
+                if body.Payload.Edges.{{ $e.StructField }} != nil {
+                    pipe.Add{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                }
+            {{- end }}
+        }
+        {{- end }}
+
         if c.Filter.CreatePipe != nil {
             c.Filter.CreatePipe(help, pipe{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
         }
@@ -217,6 +229,17 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
                     pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
                 }
             {{- end }}
+
+            {{- if gt ( len $n.Edges ) 0 }}
+            if !c.SkipUpdateAutoEdge {
+                {{- range $e := $n.Edges }}
+                    if body.Payload.Edges.{{ $e.StructField }} != nil {
+                        pipe.Add{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                    }
+                {{- end }}
+            }
+            {{- end }}
+
             if c.Filter.UpdatePipe != nil {
                 c.Filter.UpdatePipe(help, pipe{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
             }
