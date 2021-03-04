@@ -3,11 +3,11 @@
 package casbinrule
 
 import (
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 	"github.com/maxiloEmmmm/go-web/ent/predicate"
 )
 
-// ID filters vertices based on their identifier.
+// ID filters vertices based on their ID field.
 func ID(id int) predicate.CasbinRule {
 	return predicate.CasbinRule(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldID), id))
@@ -1000,7 +1000,7 @@ func V5ContainsFold(v string) predicate.CasbinRule {
 	})
 }
 
-// And groups list of predicates with the AND operator between them.
+// And groups predicates with the AND operator between them.
 func And(predicates ...predicate.CasbinRule) predicate.CasbinRule {
 	return predicate.CasbinRule(func(s *sql.Selector) {
 		s1 := s.Clone().SetP(nil)
@@ -1011,7 +1011,7 @@ func And(predicates ...predicate.CasbinRule) predicate.CasbinRule {
 	})
 }
 
-// Or groups list of predicates with the OR operator between them.
+// Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.CasbinRule) predicate.CasbinRule {
 	return predicate.CasbinRule(func(s *sql.Selector) {
 		s1 := s.Clone().SetP(nil)

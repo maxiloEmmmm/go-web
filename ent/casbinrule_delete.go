@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 	"github.com/maxiloEmmmm/go-web/ent/predicate"
 )
@@ -20,7 +20,7 @@ type CasbinRuleDelete struct {
 	mutation *CasbinRuleMutation
 }
 
-// Where adds a new predicate to the delete builder.
+// Where adds a new predicate to the CasbinRuleDelete builder.
 func (crd *CasbinRuleDelete) Where(ps ...predicate.CasbinRule) *CasbinRuleDelete {
 	crd.mutation.predicates = append(crd.mutation.predicates, ps...)
 	return crd

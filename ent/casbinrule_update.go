@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 	"github.com/maxiloEmmmm/go-web/ent/predicate"
 )
@@ -20,25 +20,25 @@ type CasbinRuleUpdate struct {
 	mutation *CasbinRuleMutation
 }
 
-// Where adds a new predicate for the builder.
+// Where adds a new predicate for the CasbinRuleUpdate builder.
 func (cru *CasbinRuleUpdate) Where(ps ...predicate.CasbinRule) *CasbinRuleUpdate {
 	cru.mutation.predicates = append(cru.mutation.predicates, ps...)
 	return cru
 }
 
-// SetPType sets the PType field.
+// SetPType sets the "PType" field.
 func (cru *CasbinRuleUpdate) SetPType(s string) *CasbinRuleUpdate {
 	cru.mutation.SetPType(s)
 	return cru
 }
 
-// SetV0 sets the v0 field.
+// SetV0 sets the "v0" field.
 func (cru *CasbinRuleUpdate) SetV0(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV0(s)
 	return cru
 }
 
-// SetNillableV0 sets the v0 field if the given value is not nil.
+// SetNillableV0 sets the "v0" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV0(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV0(*s)
@@ -46,19 +46,19 @@ func (cru *CasbinRuleUpdate) SetNillableV0(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV0 clears the value of v0.
+// ClearV0 clears the value of the "v0" field.
 func (cru *CasbinRuleUpdate) ClearV0() *CasbinRuleUpdate {
 	cru.mutation.ClearV0()
 	return cru
 }
 
-// SetV1 sets the v1 field.
+// SetV1 sets the "v1" field.
 func (cru *CasbinRuleUpdate) SetV1(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV1(s)
 	return cru
 }
 
-// SetNillableV1 sets the v1 field if the given value is not nil.
+// SetNillableV1 sets the "v1" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV1(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV1(*s)
@@ -66,19 +66,19 @@ func (cru *CasbinRuleUpdate) SetNillableV1(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV1 clears the value of v1.
+// ClearV1 clears the value of the "v1" field.
 func (cru *CasbinRuleUpdate) ClearV1() *CasbinRuleUpdate {
 	cru.mutation.ClearV1()
 	return cru
 }
 
-// SetV2 sets the v2 field.
+// SetV2 sets the "v2" field.
 func (cru *CasbinRuleUpdate) SetV2(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV2(s)
 	return cru
 }
 
-// SetNillableV2 sets the v2 field if the given value is not nil.
+// SetNillableV2 sets the "v2" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV2(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV2(*s)
@@ -86,19 +86,19 @@ func (cru *CasbinRuleUpdate) SetNillableV2(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV2 clears the value of v2.
+// ClearV2 clears the value of the "v2" field.
 func (cru *CasbinRuleUpdate) ClearV2() *CasbinRuleUpdate {
 	cru.mutation.ClearV2()
 	return cru
 }
 
-// SetV3 sets the v3 field.
+// SetV3 sets the "v3" field.
 func (cru *CasbinRuleUpdate) SetV3(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV3(s)
 	return cru
 }
 
-// SetNillableV3 sets the v3 field if the given value is not nil.
+// SetNillableV3 sets the "v3" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV3(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV3(*s)
@@ -106,19 +106,19 @@ func (cru *CasbinRuleUpdate) SetNillableV3(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV3 clears the value of v3.
+// ClearV3 clears the value of the "v3" field.
 func (cru *CasbinRuleUpdate) ClearV3() *CasbinRuleUpdate {
 	cru.mutation.ClearV3()
 	return cru
 }
 
-// SetV4 sets the v4 field.
+// SetV4 sets the "v4" field.
 func (cru *CasbinRuleUpdate) SetV4(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV4(s)
 	return cru
 }
 
-// SetNillableV4 sets the v4 field if the given value is not nil.
+// SetNillableV4 sets the "v4" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV4(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV4(*s)
@@ -126,19 +126,19 @@ func (cru *CasbinRuleUpdate) SetNillableV4(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV4 clears the value of v4.
+// ClearV4 clears the value of the "v4" field.
 func (cru *CasbinRuleUpdate) ClearV4() *CasbinRuleUpdate {
 	cru.mutation.ClearV4()
 	return cru
 }
 
-// SetV5 sets the v5 field.
+// SetV5 sets the "v5" field.
 func (cru *CasbinRuleUpdate) SetV5(s string) *CasbinRuleUpdate {
 	cru.mutation.SetV5(s)
 	return cru
 }
 
-// SetNillableV5 sets the v5 field if the given value is not nil.
+// SetNillableV5 sets the "v5" field if the given value is not nil.
 func (cru *CasbinRuleUpdate) SetNillableV5(s *string) *CasbinRuleUpdate {
 	if s != nil {
 		cru.SetV5(*s)
@@ -146,7 +146,7 @@ func (cru *CasbinRuleUpdate) SetNillableV5(s *string) *CasbinRuleUpdate {
 	return cru
 }
 
-// ClearV5 clears the value of v5.
+// ClearV5 clears the value of the "v5" field.
 func (cru *CasbinRuleUpdate) ClearV5() *CasbinRuleUpdate {
 	cru.mutation.ClearV5()
 	return cru
@@ -375,19 +375,19 @@ type CasbinRuleUpdateOne struct {
 	mutation *CasbinRuleMutation
 }
 
-// SetPType sets the PType field.
+// SetPType sets the "PType" field.
 func (cruo *CasbinRuleUpdateOne) SetPType(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetPType(s)
 	return cruo
 }
 
-// SetV0 sets the v0 field.
+// SetV0 sets the "v0" field.
 func (cruo *CasbinRuleUpdateOne) SetV0(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV0(s)
 	return cruo
 }
 
-// SetNillableV0 sets the v0 field if the given value is not nil.
+// SetNillableV0 sets the "v0" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV0(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV0(*s)
@@ -395,19 +395,19 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV0(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV0 clears the value of v0.
+// ClearV0 clears the value of the "v0" field.
 func (cruo *CasbinRuleUpdateOne) ClearV0() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV0()
 	return cruo
 }
 
-// SetV1 sets the v1 field.
+// SetV1 sets the "v1" field.
 func (cruo *CasbinRuleUpdateOne) SetV1(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV1(s)
 	return cruo
 }
 
-// SetNillableV1 sets the v1 field if the given value is not nil.
+// SetNillableV1 sets the "v1" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV1(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV1(*s)
@@ -415,19 +415,19 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV1(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV1 clears the value of v1.
+// ClearV1 clears the value of the "v1" field.
 func (cruo *CasbinRuleUpdateOne) ClearV1() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV1()
 	return cruo
 }
 
-// SetV2 sets the v2 field.
+// SetV2 sets the "v2" field.
 func (cruo *CasbinRuleUpdateOne) SetV2(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV2(s)
 	return cruo
 }
 
-// SetNillableV2 sets the v2 field if the given value is not nil.
+// SetNillableV2 sets the "v2" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV2(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV2(*s)
@@ -435,19 +435,19 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV2(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV2 clears the value of v2.
+// ClearV2 clears the value of the "v2" field.
 func (cruo *CasbinRuleUpdateOne) ClearV2() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV2()
 	return cruo
 }
 
-// SetV3 sets the v3 field.
+// SetV3 sets the "v3" field.
 func (cruo *CasbinRuleUpdateOne) SetV3(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV3(s)
 	return cruo
 }
 
-// SetNillableV3 sets the v3 field if the given value is not nil.
+// SetNillableV3 sets the "v3" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV3(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV3(*s)
@@ -455,19 +455,19 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV3(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV3 clears the value of v3.
+// ClearV3 clears the value of the "v3" field.
 func (cruo *CasbinRuleUpdateOne) ClearV3() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV3()
 	return cruo
 }
 
-// SetV4 sets the v4 field.
+// SetV4 sets the "v4" field.
 func (cruo *CasbinRuleUpdateOne) SetV4(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV4(s)
 	return cruo
 }
 
-// SetNillableV4 sets the v4 field if the given value is not nil.
+// SetNillableV4 sets the "v4" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV4(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV4(*s)
@@ -475,19 +475,19 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV4(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV4 clears the value of v4.
+// ClearV4 clears the value of the "v4" field.
 func (cruo *CasbinRuleUpdateOne) ClearV4() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV4()
 	return cruo
 }
 
-// SetV5 sets the v5 field.
+// SetV5 sets the "v5" field.
 func (cruo *CasbinRuleUpdateOne) SetV5(s string) *CasbinRuleUpdateOne {
 	cruo.mutation.SetV5(s)
 	return cruo
 }
 
-// SetNillableV5 sets the v5 field if the given value is not nil.
+// SetNillableV5 sets the "v5" field if the given value is not nil.
 func (cruo *CasbinRuleUpdateOne) SetNillableV5(s *string) *CasbinRuleUpdateOne {
 	if s != nil {
 		cruo.SetV5(*s)
@@ -495,7 +495,7 @@ func (cruo *CasbinRuleUpdateOne) SetNillableV5(s *string) *CasbinRuleUpdateOne {
 	return cruo
 }
 
-// ClearV5 clears the value of v5.
+// ClearV5 clears the value of the "v5" field.
 func (cruo *CasbinRuleUpdateOne) ClearV5() *CasbinRuleUpdateOne {
 	cruo.mutation.ClearV5()
 	return cruo
@@ -506,7 +506,7 @@ func (cruo *CasbinRuleUpdateOne) Mutation() *CasbinRuleMutation {
 	return cruo.mutation
 }
 
-// Save executes the query and returns the updated entity.
+// Save executes the query and returns the updated CasbinRule entity.
 func (cruo *CasbinRuleUpdateOne) Save(ctx context.Context) (*CasbinRule, error) {
 	var (
 		err  error
@@ -619,6 +619,13 @@ func (cruo *CasbinRuleUpdateOne) sqlSave(ctx context.Context) (_node *CasbinRule
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing CasbinRule.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if ps := cruo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := cruo.mutation.PType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -706,7 +713,7 @@ func (cruo *CasbinRuleUpdateOne) sqlSave(ctx context.Context) (_node *CasbinRule
 	}
 	_node = &CasbinRule{config: cruo.config}
 	_spec.Assign = _node.assignValues
-	_spec.ScanValues = _node.scanValues()
+	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, cruo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{casbinrule.Label}

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 	"github.com/maxiloEmmmm/go-web/ent/predicate"
 )
@@ -21,13 +21,14 @@ type CasbinRuleQuery struct {
 	limit      *int
 	offset     *int
 	order      []OrderFunc
+	fields     []string
 	predicates []predicate.CasbinRule
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the builder.
+// Where adds a new predicate for the CasbinRuleQuery builder.
 func (crq *CasbinRuleQuery) Where(ps ...predicate.CasbinRule) *CasbinRuleQuery {
 	crq.predicates = append(crq.predicates, ps...)
 	return crq
@@ -51,7 +52,8 @@ func (crq *CasbinRuleQuery) Order(o ...OrderFunc) *CasbinRuleQuery {
 	return crq
 }
 
-// First returns the first CasbinRule entity in the query. Returns *NotFoundError when no casbinrule was found.
+// First returns the first CasbinRule entity from the query.
+// Returns a *NotFoundError when no CasbinRule was found.
 func (crq *CasbinRuleQuery) First(ctx context.Context) (*CasbinRule, error) {
 	nodes, err := crq.Limit(1).All(ctx)
 	if err != nil {
@@ -72,7 +74,8 @@ func (crq *CasbinRuleQuery) FirstX(ctx context.Context) *CasbinRule {
 	return node
 }
 
-// FirstID returns the first CasbinRule id in the query. Returns *NotFoundError when no id was found.
+// FirstID returns the first CasbinRule ID from the query.
+// Returns a *NotFoundError when no CasbinRule ID was found.
 func (crq *CasbinRuleQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = crq.Limit(1).IDs(ctx); err != nil {
@@ -94,7 +97,9 @@ func (crq *CasbinRuleQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns the only CasbinRule entity in the query, returns an error if not exactly one entity was returned.
+// Only returns a single CasbinRule entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when exactly one CasbinRule entity is not found.
+// Returns a *NotFoundError when no CasbinRule entities are found.
 func (crq *CasbinRuleQuery) Only(ctx context.Context) (*CasbinRule, error) {
 	nodes, err := crq.Limit(2).All(ctx)
 	if err != nil {
@@ -119,7 +124,9 @@ func (crq *CasbinRuleQuery) OnlyX(ctx context.Context) *CasbinRule {
 	return node
 }
 
-// OnlyID returns the only CasbinRule id in the query, returns an error if not exactly one id was returned.
+// OnlyID is like Only, but returns the only CasbinRule ID in the query.
+// Returns a *NotSingularError when exactly one CasbinRule ID is not found.
+// Returns a *NotFoundError when no entities are found.
 func (crq *CasbinRuleQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = crq.Limit(2).IDs(ctx); err != nil {
@@ -162,7 +169,7 @@ func (crq *CasbinRuleQuery) AllX(ctx context.Context) []*CasbinRule {
 	return nodes
 }
 
-// IDs executes the query and returns a list of CasbinRule ids.
+// IDs executes the query and returns a list of CasbinRule IDs.
 func (crq *CasbinRuleQuery) IDs(ctx context.Context) ([]int, error) {
 	var ids []int
 	if err := crq.Select(casbinrule.FieldID).Scan(ctx, &ids); err != nil {
@@ -214,7 +221,7 @@ func (crq *CasbinRuleQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the query builder, including all associated steps. It can be
+// Clone returns a duplicate of the CasbinRuleQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
 func (crq *CasbinRuleQuery) Clone() *CasbinRuleQuery {
 	if crq == nil {
@@ -232,7 +239,7 @@ func (crq *CasbinRuleQuery) Clone() *CasbinRuleQuery {
 	}
 }
 
-// GroupBy used to group vertices by one or more fields/columns.
+// GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
@@ -254,12 +261,13 @@ func (crq *CasbinRuleQuery) GroupBy(field string, fields ...string) *CasbinRuleG
 		if err := crq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return crq.sqlQuery(), nil
+		return crq.sqlQuery(ctx), nil
 	}
 	return group
 }
 
-// Select one or more fields from the given query.
+// Select allows the selection one or more fields/columns for the given query,
+// instead of selecting all fields in the entity.
 //
 // Example:
 //
@@ -272,18 +280,16 @@ func (crq *CasbinRuleQuery) GroupBy(field string, fields ...string) *CasbinRuleG
 //		Scan(ctx, &v)
 //
 func (crq *CasbinRuleQuery) Select(field string, fields ...string) *CasbinRuleSelect {
-	selector := &CasbinRuleSelect{config: crq.config}
-	selector.fields = append([]string{field}, fields...)
-	selector.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := crq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return crq.sqlQuery(), nil
-	}
-	return selector
+	crq.fields = append([]string{field}, fields...)
+	return &CasbinRuleSelect{CasbinRuleQuery: crq}
 }
 
 func (crq *CasbinRuleQuery) prepareQuery(ctx context.Context) error {
+	for _, f := range crq.fields {
+		if !casbinrule.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+		}
+	}
 	if crq.path != nil {
 		prev, err := crq.path(ctx)
 		if err != nil {
@@ -299,18 +305,17 @@ func (crq *CasbinRuleQuery) sqlAll(ctx context.Context) ([]*CasbinRule, error) {
 		nodes = []*CasbinRule{}
 		_spec = crq.querySpec()
 	)
-	_spec.ScanValues = func() []interface{} {
+	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &CasbinRule{config: crq.config}
 		nodes = append(nodes, node)
-		values := node.scanValues()
-		return values
+		return node.scanValues(columns)
 	}
-	_spec.Assign = func(values ...interface{}) error {
+	_spec.Assign = func(columns []string, values []interface{}) error {
 		if len(nodes) == 0 {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
-		return node.assignValues(values...)
+		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, crq.driver, _spec); err != nil {
 		return nil, err
@@ -347,6 +352,15 @@ func (crq *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
 		From:   crq.sql,
 		Unique: true,
 	}
+	if fields := crq.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, casbinrule.FieldID)
+		for i := range fields {
+			if fields[i] != casbinrule.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
+			}
+		}
+	}
 	if ps := crq.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -370,7 +384,7 @@ func (crq *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (crq *CasbinRuleQuery) sqlQuery() *sql.Selector {
+func (crq *CasbinRuleQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(crq.driver.Dialect())
 	t1 := builder.Table(casbinrule.Table)
 	selector := builder.Select(t1.Columns(casbinrule.Columns...)...).From(t1)
@@ -395,7 +409,7 @@ func (crq *CasbinRuleQuery) sqlQuery() *sql.Selector {
 	return selector
 }
 
-// CasbinRuleGroupBy is the builder for group-by CasbinRule entities.
+// CasbinRuleGroupBy is the group-by builder for CasbinRule entities.
 type CasbinRuleGroupBy struct {
 	config
 	fields []string
@@ -411,7 +425,7 @@ func (crgb *CasbinRuleGroupBy) Aggregate(fns ...AggregateFunc) *CasbinRuleGroupB
 	return crgb
 }
 
-// Scan applies the group-by query and scan the result into the given value.
+// Scan applies the group-by query and scans the result into the given value.
 func (crgb *CasbinRuleGroupBy) Scan(ctx context.Context, v interface{}) error {
 	query, err := crgb.path(ctx)
 	if err != nil {
@@ -428,7 +442,8 @@ func (crgb *CasbinRuleGroupBy) ScanX(ctx context.Context, v interface{}) {
 	}
 }
 
-// Strings returns list of strings from group-by. It is only allowed when querying group-by with one field.
+// Strings returns list of strings from group-by.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Strings(ctx context.Context) ([]string, error) {
 	if len(crgb.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleGroupBy.Strings is not achievable when grouping more than 1 field")
@@ -449,7 +464,8 @@ func (crgb *CasbinRuleGroupBy) StringsX(ctx context.Context) []string {
 	return v
 }
 
-// String returns a single string from group-by. It is only allowed when querying group-by with one field.
+// String returns a single string from a group-by query.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) String(ctx context.Context) (_ string, err error) {
 	var v []string
 	if v, err = crgb.Strings(ctx); err != nil {
@@ -475,7 +491,8 @@ func (crgb *CasbinRuleGroupBy) StringX(ctx context.Context) string {
 	return v
 }
 
-// Ints returns list of ints from group-by. It is only allowed when querying group-by with one field.
+// Ints returns list of ints from group-by.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Ints(ctx context.Context) ([]int, error) {
 	if len(crgb.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleGroupBy.Ints is not achievable when grouping more than 1 field")
@@ -496,7 +513,8 @@ func (crgb *CasbinRuleGroupBy) IntsX(ctx context.Context) []int {
 	return v
 }
 
-// Int returns a single int from group-by. It is only allowed when querying group-by with one field.
+// Int returns a single int from a group-by query.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Int(ctx context.Context) (_ int, err error) {
 	var v []int
 	if v, err = crgb.Ints(ctx); err != nil {
@@ -522,7 +540,8 @@ func (crgb *CasbinRuleGroupBy) IntX(ctx context.Context) int {
 	return v
 }
 
-// Float64s returns list of float64s from group-by. It is only allowed when querying group-by with one field.
+// Float64s returns list of float64s from group-by.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Float64s(ctx context.Context) ([]float64, error) {
 	if len(crgb.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleGroupBy.Float64s is not achievable when grouping more than 1 field")
@@ -543,7 +562,8 @@ func (crgb *CasbinRuleGroupBy) Float64sX(ctx context.Context) []float64 {
 	return v
 }
 
-// Float64 returns a single float64 from group-by. It is only allowed when querying group-by with one field.
+// Float64 returns a single float64 from a group-by query.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Float64(ctx context.Context) (_ float64, err error) {
 	var v []float64
 	if v, err = crgb.Float64s(ctx); err != nil {
@@ -569,7 +589,8 @@ func (crgb *CasbinRuleGroupBy) Float64X(ctx context.Context) float64 {
 	return v
 }
 
-// Bools returns list of bools from group-by. It is only allowed when querying group-by with one field.
+// Bools returns list of bools from group-by.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Bools(ctx context.Context) ([]bool, error) {
 	if len(crgb.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleGroupBy.Bools is not achievable when grouping more than 1 field")
@@ -590,7 +611,8 @@ func (crgb *CasbinRuleGroupBy) BoolsX(ctx context.Context) []bool {
 	return v
 }
 
-// Bool returns a single bool from group-by. It is only allowed when querying group-by with one field.
+// Bool returns a single bool from a group-by query.
+// It is only allowed when executing a group-by query with one field.
 func (crgb *CasbinRuleGroupBy) Bool(ctx context.Context) (_ bool, err error) {
 	var v []bool
 	if v, err = crgb.Bools(ctx); err != nil {
@@ -645,22 +667,19 @@ func (crgb *CasbinRuleGroupBy) sqlQuery() *sql.Selector {
 	return selector.Select(columns...).GroupBy(crgb.fields...)
 }
 
-// CasbinRuleSelect is the builder for select fields of CasbinRule entities.
+// CasbinRuleSelect is the builder for selecting fields of CasbinRule entities.
 type CasbinRuleSelect struct {
-	config
-	fields []string
+	*CasbinRuleQuery
 	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	sql *sql.Selector
 }
 
-// Scan applies the selector query and scan the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (crs *CasbinRuleSelect) Scan(ctx context.Context, v interface{}) error {
-	query, err := crs.path(ctx)
-	if err != nil {
+	if err := crs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	crs.sql = query
+	crs.sql = crs.CasbinRuleQuery.sqlQuery(ctx)
 	return crs.sqlScan(ctx, v)
 }
 
@@ -671,7 +690,7 @@ func (crs *CasbinRuleSelect) ScanX(ctx context.Context, v interface{}) {
 	}
 }
 
-// Strings returns list of strings from selector. It is only allowed when selecting one field.
+// Strings returns list of strings from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Strings(ctx context.Context) ([]string, error) {
 	if len(crs.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleSelect.Strings is not achievable when selecting more than 1 field")
@@ -692,7 +711,7 @@ func (crs *CasbinRuleSelect) StringsX(ctx context.Context) []string {
 	return v
 }
 
-// String returns a single string from selector. It is only allowed when selecting one field.
+// String returns a single string from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) String(ctx context.Context) (_ string, err error) {
 	var v []string
 	if v, err = crs.Strings(ctx); err != nil {
@@ -718,7 +737,7 @@ func (crs *CasbinRuleSelect) StringX(ctx context.Context) string {
 	return v
 }
 
-// Ints returns list of ints from selector. It is only allowed when selecting one field.
+// Ints returns list of ints from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Ints(ctx context.Context) ([]int, error) {
 	if len(crs.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleSelect.Ints is not achievable when selecting more than 1 field")
@@ -739,7 +758,7 @@ func (crs *CasbinRuleSelect) IntsX(ctx context.Context) []int {
 	return v
 }
 
-// Int returns a single int from selector. It is only allowed when selecting one field.
+// Int returns a single int from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Int(ctx context.Context) (_ int, err error) {
 	var v []int
 	if v, err = crs.Ints(ctx); err != nil {
@@ -765,7 +784,7 @@ func (crs *CasbinRuleSelect) IntX(ctx context.Context) int {
 	return v
 }
 
-// Float64s returns list of float64s from selector. It is only allowed when selecting one field.
+// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Float64s(ctx context.Context) ([]float64, error) {
 	if len(crs.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleSelect.Float64s is not achievable when selecting more than 1 field")
@@ -786,7 +805,7 @@ func (crs *CasbinRuleSelect) Float64sX(ctx context.Context) []float64 {
 	return v
 }
 
-// Float64 returns a single float64 from selector. It is only allowed when selecting one field.
+// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Float64(ctx context.Context) (_ float64, err error) {
 	var v []float64
 	if v, err = crs.Float64s(ctx); err != nil {
@@ -812,7 +831,7 @@ func (crs *CasbinRuleSelect) Float64X(ctx context.Context) float64 {
 	return v
 }
 
-// Bools returns list of bools from selector. It is only allowed when selecting one field.
+// Bools returns list of bools from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Bools(ctx context.Context) ([]bool, error) {
 	if len(crs.fields) > 1 {
 		return nil, errors.New("ent: CasbinRuleSelect.Bools is not achievable when selecting more than 1 field")
@@ -833,7 +852,7 @@ func (crs *CasbinRuleSelect) BoolsX(ctx context.Context) []bool {
 	return v
 }
 
-// Bool returns a single bool from selector. It is only allowed when selecting one field.
+// Bool returns a single bool from a selector. It is only allowed when selecting one field.
 func (crs *CasbinRuleSelect) Bool(ctx context.Context) (_ bool, err error) {
 	var v []bool
 	if v, err = crs.Bools(ctx); err != nil {
@@ -860,11 +879,6 @@ func (crs *CasbinRuleSelect) BoolX(ctx context.Context) bool {
 }
 
 func (crs *CasbinRuleSelect) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range crs.fields {
-		if !casbinrule.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
-		}
-	}
 	rows := &sql.Rows{}
 	query, args := crs.sqlQuery().Query()
 	if err := crs.driver.Query(ctx, query, args, rows); err != nil {

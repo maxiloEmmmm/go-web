@@ -3,7 +3,7 @@
 package predicate
 
 import (
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // CasbinRule is the predicate function for casbinrule builders.

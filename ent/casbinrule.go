@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 )
 
@@ -32,78 +32,91 @@ type CasbinRule struct {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*CasbinRule) scanValues() []interface{} {
-	return []interface{}{
-		&sql.NullInt64{},  // id
-		&sql.NullString{}, // PType
-		&sql.NullString{}, // v0
-		&sql.NullString{}, // v1
-		&sql.NullString{}, // v2
-		&sql.NullString{}, // v3
-		&sql.NullString{}, // v4
-		&sql.NullString{}, // v5
+func (*CasbinRule) scanValues(columns []string) ([]interface{}, error) {
+	values := make([]interface{}, len(columns))
+	for i := range columns {
+		switch columns[i] {
+		case casbinrule.FieldID:
+			values[i] = &sql.NullInt64{}
+		case casbinrule.FieldPType, casbinrule.FieldV0, casbinrule.FieldV1, casbinrule.FieldV2, casbinrule.FieldV3, casbinrule.FieldV4, casbinrule.FieldV5:
+			values[i] = &sql.NullString{}
+		default:
+			return nil, fmt.Errorf("unexpected column %q for type CasbinRule", columns[i])
+		}
 	}
+	return values, nil
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the CasbinRule fields.
-func (cr *CasbinRule) assignValues(values ...interface{}) error {
-	if m, n := len(values), len(casbinrule.Columns); m < n {
+func (cr *CasbinRule) assignValues(columns []string, values []interface{}) error {
+	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
-	value, ok := values[0].(*sql.NullInt64)
-	if !ok {
-		return fmt.Errorf("unexpected type %T for field id", value)
-	}
-	cr.ID = int(value.Int64)
-	values = values[1:]
-	if value, ok := values[0].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field PType", values[0])
-	} else if value.Valid {
-		cr.PType = value.String
-	}
-	if value, ok := values[1].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v0", values[1])
-	} else if value.Valid {
-		cr.V0 = value.String
-	}
-	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v1", values[2])
-	} else if value.Valid {
-		cr.V1 = value.String
-	}
-	if value, ok := values[3].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v2", values[3])
-	} else if value.Valid {
-		cr.V2 = value.String
-	}
-	if value, ok := values[4].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v3", values[4])
-	} else if value.Valid {
-		cr.V3 = value.String
-	}
-	if value, ok := values[5].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v4", values[5])
-	} else if value.Valid {
-		cr.V4 = value.String
-	}
-	if value, ok := values[6].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field v5", values[6])
-	} else if value.Valid {
-		cr.V5 = value.String
+	for i := range columns {
+		switch columns[i] {
+		case casbinrule.FieldID:
+			value, ok := values[i].(*sql.NullInt64)
+			if !ok {
+				return fmt.Errorf("unexpected type %T for field id", value)
+			}
+			cr.ID = int(value.Int64)
+		case casbinrule.FieldPType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field PType", values[i])
+			} else if value.Valid {
+				cr.PType = value.String
+			}
+		case casbinrule.FieldV0:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v0", values[i])
+			} else if value.Valid {
+				cr.V0 = value.String
+			}
+		case casbinrule.FieldV1:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v1", values[i])
+			} else if value.Valid {
+				cr.V1 = value.String
+			}
+		case casbinrule.FieldV2:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v2", values[i])
+			} else if value.Valid {
+				cr.V2 = value.String
+			}
+		case casbinrule.FieldV3:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v3", values[i])
+			} else if value.Valid {
+				cr.V3 = value.String
+			}
+		case casbinrule.FieldV4:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v4", values[i])
+			} else if value.Valid {
+				cr.V4 = value.String
+			}
+		case casbinrule.FieldV5:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field v5", values[i])
+			} else if value.Valid {
+				cr.V5 = value.String
+			}
+		}
 	}
 	return nil
 }
 
 // Update returns a builder for updating this CasbinRule.
-// Note that, you need to call CasbinRule.Unwrap() before calling this method, if this CasbinRule
+// Note that you need to call CasbinRule.Unwrap() before calling this method if this CasbinRule
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (cr *CasbinRule) Update() *CasbinRuleUpdateOne {
 	return (&CasbinRuleClient{config: cr.config}).UpdateOne(cr)
 }
 
-// Unwrap unwraps the entity that was returned from a transaction after it was closed,
-// so that all next queries will be executed through the driver which created the transaction.
+// Unwrap unwraps the CasbinRule entity that was returned from a transaction after it was closed,
+// so that all future queries will be executed through the driver which created the transaction.
 func (cr *CasbinRule) Unwrap() *CasbinRule {
 	tx, ok := cr.config.driver.(*txDriver)
 	if !ok {

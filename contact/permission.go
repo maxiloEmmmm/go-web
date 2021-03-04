@@ -3,10 +3,10 @@ package contact
 import (
 	"context"
 	"database/sql"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
-	entsql "github.com/facebook/ent/dialect/sql"
 	"github.com/gin-gonic/gin"
 	go_tool "github.com/maxiloEmmmm/go-tool"
 	"github.com/maxiloEmmmm/go-web/ent"

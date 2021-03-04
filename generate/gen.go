@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/facebook/ent/entc"
-	"github.com/facebook/ent/entc/gen"
+	"entgo.io/ent/entc"
+	"entgo.io/ent/entc/gen"
 	"log"
 	"os"
 	"text/template"

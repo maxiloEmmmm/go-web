@@ -51,27 +51,27 @@ func ValidColumn(column string) bool {
 var (
 	// PTypeValidator is a validator for the "PType" field. It is called by the builders before save.
 	PTypeValidator func(string) error
-	// DefaultV0 holds the default value on creation for the v0 field.
+	// DefaultV0 holds the default value on creation for the "v0" field.
 	DefaultV0 string
 	// V0Validator is a validator for the "v0" field. It is called by the builders before save.
 	V0Validator func(string) error
-	// DefaultV1 holds the default value on creation for the v1 field.
+	// DefaultV1 holds the default value on creation for the "v1" field.
 	DefaultV1 string
 	// V1Validator is a validator for the "v1" field. It is called by the builders before save.
 	V1Validator func(string) error
-	// DefaultV2 holds the default value on creation for the v2 field.
+	// DefaultV2 holds the default value on creation for the "v2" field.
 	DefaultV2 string
 	// V2Validator is a validator for the "v2" field. It is called by the builders before save.
 	V2Validator func(string) error
-	// DefaultV3 holds the default value on creation for the v3 field.
+	// DefaultV3 holds the default value on creation for the "v3" field.
 	DefaultV3 string
 	// V3Validator is a validator for the "v3" field. It is called by the builders before save.
 	V3Validator func(string) error
-	// DefaultV4 holds the default value on creation for the v4 field.
+	// DefaultV4 holds the default value on creation for the "v4" field.
 	DefaultV4 string
 	// V4Validator is a validator for the "v4" field. It is called by the builders before save.
 	V4Validator func(string) error
-	// DefaultV5 holds the default value on creation for the v5 field.
+	// DefaultV5 holds the default value on creation for the "v5" field.
 	DefaultV5 string
 	// V5Validator is a validator for the "v5" field. It is called by the builders before save.
 	V5Validator func(string) error

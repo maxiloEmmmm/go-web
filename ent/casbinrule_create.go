@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 )
 
@@ -19,19 +19,19 @@ type CasbinRuleCreate struct {
 	hooks    []Hook
 }
 
-// SetPType sets the PType field.
+// SetPType sets the "PType" field.
 func (crc *CasbinRuleCreate) SetPType(s string) *CasbinRuleCreate {
 	crc.mutation.SetPType(s)
 	return crc
 }
 
-// SetV0 sets the v0 field.
+// SetV0 sets the "v0" field.
 func (crc *CasbinRuleCreate) SetV0(s string) *CasbinRuleCreate {
 	crc.mutation.SetV0(s)
 	return crc
 }
 
-// SetNillableV0 sets the v0 field if the given value is not nil.
+// SetNillableV0 sets the "v0" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV0(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV0(*s)
@@ -39,13 +39,13 @@ func (crc *CasbinRuleCreate) SetNillableV0(s *string) *CasbinRuleCreate {
 	return crc
 }
 
-// SetV1 sets the v1 field.
+// SetV1 sets the "v1" field.
 func (crc *CasbinRuleCreate) SetV1(s string) *CasbinRuleCreate {
 	crc.mutation.SetV1(s)
 	return crc
 }
 
-// SetNillableV1 sets the v1 field if the given value is not nil.
+// SetNillableV1 sets the "v1" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV1(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV1(*s)
@@ -53,13 +53,13 @@ func (crc *CasbinRuleCreate) SetNillableV1(s *string) *CasbinRuleCreate {
 	return crc
 }
 
-// SetV2 sets the v2 field.
+// SetV2 sets the "v2" field.
 func (crc *CasbinRuleCreate) SetV2(s string) *CasbinRuleCreate {
 	crc.mutation.SetV2(s)
 	return crc
 }
 
-// SetNillableV2 sets the v2 field if the given value is not nil.
+// SetNillableV2 sets the "v2" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV2(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV2(*s)
@@ -67,13 +67,13 @@ func (crc *CasbinRuleCreate) SetNillableV2(s *string) *CasbinRuleCreate {
 	return crc
 }
 
-// SetV3 sets the v3 field.
+// SetV3 sets the "v3" field.
 func (crc *CasbinRuleCreate) SetV3(s string) *CasbinRuleCreate {
 	crc.mutation.SetV3(s)
 	return crc
 }
 
-// SetNillableV3 sets the v3 field if the given value is not nil.
+// SetNillableV3 sets the "v3" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV3(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV3(*s)
@@ -81,13 +81,13 @@ func (crc *CasbinRuleCreate) SetNillableV3(s *string) *CasbinRuleCreate {
 	return crc
 }
 
-// SetV4 sets the v4 field.
+// SetV4 sets the "v4" field.
 func (crc *CasbinRuleCreate) SetV4(s string) *CasbinRuleCreate {
 	crc.mutation.SetV4(s)
 	return crc
 }
 
-// SetNillableV4 sets the v4 field if the given value is not nil.
+// SetNillableV4 sets the "v4" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV4(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV4(*s)
@@ -95,13 +95,13 @@ func (crc *CasbinRuleCreate) SetNillableV4(s *string) *CasbinRuleCreate {
 	return crc
 }
 
-// SetV5 sets the v5 field.
+// SetV5 sets the "v5" field.
 func (crc *CasbinRuleCreate) SetV5(s string) *CasbinRuleCreate {
 	crc.mutation.SetV5(s)
 	return crc
 }
 
-// SetNillableV5 sets the v5 field if the given value is not nil.
+// SetNillableV5 sets the "v5" field if the given value is not nil.
 func (crc *CasbinRuleCreate) SetNillableV5(s *string) *CasbinRuleCreate {
 	if s != nil {
 		crc.SetV5(*s)
@@ -313,7 +313,7 @@ func (crc *CasbinRuleCreate) createSpec() (*CasbinRule, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
-// CasbinRuleCreateBulk is the builder for creating a bulk of CasbinRule entities.
+// CasbinRuleCreateBulk is the builder for creating many CasbinRule entities in bulk.
 type CasbinRuleCreateBulk struct {
 	config
 	builders []*CasbinRuleCreate
@@ -371,7 +371,7 @@ func (crcb *CasbinRuleCreateBulk) Save(ctx context.Context) ([]*CasbinRule, erro
 	return nodes, nil
 }
 
-// SaveX calls Save and panics if Save returns an error.
+// SaveX is like Save, but panics if an error occurs.
 func (crcb *CasbinRuleCreateBulk) SaveX(ctx context.Context) []*CasbinRule {
 	v, err := crcb.Save(ctx)
 	if err != nil {

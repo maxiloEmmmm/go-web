@@ -1,8 +1,8 @@
 package contact
 
 import (
+	"entgo.io/ent/dialect/sql"
 	"fmt"
-	"github.com/facebook/ent/dialect/sql"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	go_tool "github.com/maxiloEmmmm/go-tool"

@@ -10,7 +10,7 @@ import (
 	"github.com/maxiloEmmmm/go-web/ent/casbinrule"
 	"github.com/maxiloEmmmm/go-web/ent/predicate"
 
-	"github.com/facebook/ent"
+	"entgo.io/ent"
 )
 
 const (
@@ -25,8 +25,7 @@ const (
 	TypeCasbinRule = "CasbinRule"
 )
 
-// CasbinRuleMutation represents an operation that mutate the CasbinRules
-// nodes in the graph.
+// CasbinRuleMutation represents an operation that mutates the CasbinRule nodes in the graph.
 type CasbinRuleMutation struct {
 	config
 	op            Op
@@ -47,10 +46,10 @@ type CasbinRuleMutation struct {
 
 var _ ent.Mutation = (*CasbinRuleMutation)(nil)
 
-// casbinruleOption allows to manage the mutation configuration using functional options.
+// casbinruleOption allows management of the mutation configuration using functional options.
 type casbinruleOption func(*CasbinRuleMutation)
 
-// newCasbinRuleMutation creates new mutation for CasbinRule.
+// newCasbinRuleMutation creates new mutation for the CasbinRule entity.
 func newCasbinRuleMutation(c config, op Op, opts ...casbinruleOption) *CasbinRuleMutation {
 	m := &CasbinRuleMutation{
 		config:        c,
@@ -64,7 +63,7 @@ func newCasbinRuleMutation(c config, op Op, opts ...casbinruleOption) *CasbinRul
 	return m
 }
 
-// withCasbinRuleID sets the id field of the mutation.
+// withCasbinRuleID sets the ID field of the mutation.
 func withCasbinRuleID(id int) casbinruleOption {
 	return func(m *CasbinRuleMutation) {
 		var (
@@ -115,8 +114,8 @@ func (m CasbinRuleMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the id value in the mutation. Note that, the id
-// is available only if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
 func (m *CasbinRuleMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -124,12 +123,12 @@ func (m *CasbinRuleMutation) ID() (id int, exists bool) {
 	return *m.id, true
 }
 
-// SetPType sets the PType field.
+// SetPType sets the "PType" field.
 func (m *CasbinRuleMutation) SetPType(s string) {
 	m._PType = &s
 }
 
-// PType returns the PType value in the mutation.
+// PType returns the value of the "PType" field in the mutation.
 func (m *CasbinRuleMutation) PType() (r string, exists bool) {
 	v := m._PType
 	if v == nil {
@@ -138,13 +137,12 @@ func (m *CasbinRuleMutation) PType() (r string, exists bool) {
 	return *v, true
 }
 
-// OldPType returns the old PType value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldPType returns the old "PType" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldPType(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldPType is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldPType is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldPType requires an ID field in the mutation")
@@ -156,17 +154,17 @@ func (m *CasbinRuleMutation) OldPType(ctx context.Context) (v string, err error)
 	return oldValue.PType, nil
 }
 
-// ResetPType reset all changes of the "PType" field.
+// ResetPType resets all changes to the "PType" field.
 func (m *CasbinRuleMutation) ResetPType() {
 	m._PType = nil
 }
 
-// SetV0 sets the v0 field.
+// SetV0 sets the "v0" field.
 func (m *CasbinRuleMutation) SetV0(s string) {
 	m.v0 = &s
 }
 
-// V0 returns the v0 value in the mutation.
+// V0 returns the value of the "v0" field in the mutation.
 func (m *CasbinRuleMutation) V0() (r string, exists bool) {
 	v := m.v0
 	if v == nil {
@@ -175,13 +173,12 @@ func (m *CasbinRuleMutation) V0() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV0 returns the old v0 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV0 returns the old "v0" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV0(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV0 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV0 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV0 requires an ID field in the mutation")
@@ -193,30 +190,30 @@ func (m *CasbinRuleMutation) OldV0(ctx context.Context) (v string, err error) {
 	return oldValue.V0, nil
 }
 
-// ClearV0 clears the value of v0.
+// ClearV0 clears the value of the "v0" field.
 func (m *CasbinRuleMutation) ClearV0() {
 	m.v0 = nil
 	m.clearedFields[casbinrule.FieldV0] = struct{}{}
 }
 
-// V0Cleared returns if the field v0 was cleared in this mutation.
+// V0Cleared returns if the "v0" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V0Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV0]
 	return ok
 }
 
-// ResetV0 reset all changes of the "v0" field.
+// ResetV0 resets all changes to the "v0" field.
 func (m *CasbinRuleMutation) ResetV0() {
 	m.v0 = nil
 	delete(m.clearedFields, casbinrule.FieldV0)
 }
 
-// SetV1 sets the v1 field.
+// SetV1 sets the "v1" field.
 func (m *CasbinRuleMutation) SetV1(s string) {
 	m.v1 = &s
 }
 
-// V1 returns the v1 value in the mutation.
+// V1 returns the value of the "v1" field in the mutation.
 func (m *CasbinRuleMutation) V1() (r string, exists bool) {
 	v := m.v1
 	if v == nil {
@@ -225,13 +222,12 @@ func (m *CasbinRuleMutation) V1() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV1 returns the old v1 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV1 returns the old "v1" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV1(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV1 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV1 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV1 requires an ID field in the mutation")
@@ -243,30 +239,30 @@ func (m *CasbinRuleMutation) OldV1(ctx context.Context) (v string, err error) {
 	return oldValue.V1, nil
 }
 
-// ClearV1 clears the value of v1.
+// ClearV1 clears the value of the "v1" field.
 func (m *CasbinRuleMutation) ClearV1() {
 	m.v1 = nil
 	m.clearedFields[casbinrule.FieldV1] = struct{}{}
 }
 
-// V1Cleared returns if the field v1 was cleared in this mutation.
+// V1Cleared returns if the "v1" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V1Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV1]
 	return ok
 }
 
-// ResetV1 reset all changes of the "v1" field.
+// ResetV1 resets all changes to the "v1" field.
 func (m *CasbinRuleMutation) ResetV1() {
 	m.v1 = nil
 	delete(m.clearedFields, casbinrule.FieldV1)
 }
 
-// SetV2 sets the v2 field.
+// SetV2 sets the "v2" field.
 func (m *CasbinRuleMutation) SetV2(s string) {
 	m.v2 = &s
 }
 
-// V2 returns the v2 value in the mutation.
+// V2 returns the value of the "v2" field in the mutation.
 func (m *CasbinRuleMutation) V2() (r string, exists bool) {
 	v := m.v2
 	if v == nil {
@@ -275,13 +271,12 @@ func (m *CasbinRuleMutation) V2() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV2 returns the old v2 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV2 returns the old "v2" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV2(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV2 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV2 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV2 requires an ID field in the mutation")
@@ -293,30 +288,30 @@ func (m *CasbinRuleMutation) OldV2(ctx context.Context) (v string, err error) {
 	return oldValue.V2, nil
 }
 
-// ClearV2 clears the value of v2.
+// ClearV2 clears the value of the "v2" field.
 func (m *CasbinRuleMutation) ClearV2() {
 	m.v2 = nil
 	m.clearedFields[casbinrule.FieldV2] = struct{}{}
 }
 
-// V2Cleared returns if the field v2 was cleared in this mutation.
+// V2Cleared returns if the "v2" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V2Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV2]
 	return ok
 }
 
-// ResetV2 reset all changes of the "v2" field.
+// ResetV2 resets all changes to the "v2" field.
 func (m *CasbinRuleMutation) ResetV2() {
 	m.v2 = nil
 	delete(m.clearedFields, casbinrule.FieldV2)
 }
 
-// SetV3 sets the v3 field.
+// SetV3 sets the "v3" field.
 func (m *CasbinRuleMutation) SetV3(s string) {
 	m.v3 = &s
 }
 
-// V3 returns the v3 value in the mutation.
+// V3 returns the value of the "v3" field in the mutation.
 func (m *CasbinRuleMutation) V3() (r string, exists bool) {
 	v := m.v3
 	if v == nil {
@@ -325,13 +320,12 @@ func (m *CasbinRuleMutation) V3() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV3 returns the old v3 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV3 returns the old "v3" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV3(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV3 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV3 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV3 requires an ID field in the mutation")
@@ -343,30 +337,30 @@ func (m *CasbinRuleMutation) OldV3(ctx context.Context) (v string, err error) {
 	return oldValue.V3, nil
 }
 
-// ClearV3 clears the value of v3.
+// ClearV3 clears the value of the "v3" field.
 func (m *CasbinRuleMutation) ClearV3() {
 	m.v3 = nil
 	m.clearedFields[casbinrule.FieldV3] = struct{}{}
 }
 
-// V3Cleared returns if the field v3 was cleared in this mutation.
+// V3Cleared returns if the "v3" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V3Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV3]
 	return ok
 }
 
-// ResetV3 reset all changes of the "v3" field.
+// ResetV3 resets all changes to the "v3" field.
 func (m *CasbinRuleMutation) ResetV3() {
 	m.v3 = nil
 	delete(m.clearedFields, casbinrule.FieldV3)
 }
 
-// SetV4 sets the v4 field.
+// SetV4 sets the "v4" field.
 func (m *CasbinRuleMutation) SetV4(s string) {
 	m.v4 = &s
 }
 
-// V4 returns the v4 value in the mutation.
+// V4 returns the value of the "v4" field in the mutation.
 func (m *CasbinRuleMutation) V4() (r string, exists bool) {
 	v := m.v4
 	if v == nil {
@@ -375,13 +369,12 @@ func (m *CasbinRuleMutation) V4() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV4 returns the old v4 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV4 returns the old "v4" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV4(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV4 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV4 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV4 requires an ID field in the mutation")
@@ -393,30 +386,30 @@ func (m *CasbinRuleMutation) OldV4(ctx context.Context) (v string, err error) {
 	return oldValue.V4, nil
 }
 
-// ClearV4 clears the value of v4.
+// ClearV4 clears the value of the "v4" field.
 func (m *CasbinRuleMutation) ClearV4() {
 	m.v4 = nil
 	m.clearedFields[casbinrule.FieldV4] = struct{}{}
 }
 
-// V4Cleared returns if the field v4 was cleared in this mutation.
+// V4Cleared returns if the "v4" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V4Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV4]
 	return ok
 }
 
-// ResetV4 reset all changes of the "v4" field.
+// ResetV4 resets all changes to the "v4" field.
 func (m *CasbinRuleMutation) ResetV4() {
 	m.v4 = nil
 	delete(m.clearedFields, casbinrule.FieldV4)
 }
 
-// SetV5 sets the v5 field.
+// SetV5 sets the "v5" field.
 func (m *CasbinRuleMutation) SetV5(s string) {
 	m.v5 = &s
 }
 
-// V5 returns the v5 value in the mutation.
+// V5 returns the value of the "v5" field in the mutation.
 func (m *CasbinRuleMutation) V5() (r string, exists bool) {
 	v := m.v5
 	if v == nil {
@@ -425,13 +418,12 @@ func (m *CasbinRuleMutation) V5() (r string, exists bool) {
 	return *v, true
 }
 
-// OldV5 returns the old v5 value of the CasbinRule.
-// If the CasbinRule object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+// OldV5 returns the old "v5" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *CasbinRuleMutation) OldV5(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldV5 is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldV5 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
 		return v, fmt.Errorf("OldV5 requires an ID field in the mutation")
@@ -443,19 +435,19 @@ func (m *CasbinRuleMutation) OldV5(ctx context.Context) (v string, err error) {
 	return oldValue.V5, nil
 }
 
-// ClearV5 clears the value of v5.
+// ClearV5 clears the value of the "v5" field.
 func (m *CasbinRuleMutation) ClearV5() {
 	m.v5 = nil
 	m.clearedFields[casbinrule.FieldV5] = struct{}{}
 }
 
-// V5Cleared returns if the field v5 was cleared in this mutation.
+// V5Cleared returns if the "v5" field was cleared in this mutation.
 func (m *CasbinRuleMutation) V5Cleared() bool {
 	_, ok := m.clearedFields[casbinrule.FieldV5]
 	return ok
 }
 
-// ResetV5 reset all changes of the "v5" field.
+// ResetV5 resets all changes to the "v5" field.
 func (m *CasbinRuleMutation) ResetV5() {
 	m.v5 = nil
 	delete(m.clearedFields, casbinrule.FieldV5)
@@ -471,9 +463,9 @@ func (m *CasbinRuleMutation) Type() string {
 	return m.typ
 }
 
-// Fields returns all fields that were changed during
-// this mutation. Note that, in order to get all numeric
-// fields that were in/decremented, call AddedFields().
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
 func (m *CasbinRuleMutation) Fields() []string {
 	fields := make([]string, 0, 7)
 	if m._PType != nil {
@@ -500,9 +492,9 @@ func (m *CasbinRuleMutation) Fields() []string {
 	return fields
 }
 
-// Field returns the value of a field with the given name.
-// The second boolean value indicates that this field was
-// not set, or was not define in the schema.
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
 func (m *CasbinRuleMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case casbinrule.FieldPType:
@@ -523,9 +515,9 @@ func (m *CasbinRuleMutation) Field(name string) (ent.Value, bool) {
 	return nil, false
 }
 
-// OldField returns the old value of the field from the database.
-// An error is returned if the mutation operation is not UpdateOne,
-// or the query to the database was failed.
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
 func (m *CasbinRuleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
 	case casbinrule.FieldPType:
@@ -546,9 +538,9 @@ func (m *CasbinRuleMutation) OldField(ctx context.Context, name string) (ent.Val
 	return nil, fmt.Errorf("unknown CasbinRule field %s", name)
 }
 
-// SetField sets the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
 func (m *CasbinRuleMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case casbinrule.FieldPType:
@@ -604,30 +596,30 @@ func (m *CasbinRuleMutation) SetField(name string, value ent.Value) error {
 	return fmt.Errorf("unknown CasbinRule field %s", name)
 }
 
-// AddedFields returns all numeric fields that were incremented
-// or decremented during this mutation.
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
 func (m *CasbinRuleMutation) AddedFields() []string {
 	return nil
 }
 
-// AddedField returns the numeric value that was in/decremented
-// from a field with the given name. The second value indicates
-// that this field was not set, or was not define in the schema.
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
 func (m *CasbinRuleMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
-// AddField adds the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
 func (m *CasbinRuleMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
 	return fmt.Errorf("unknown CasbinRule numeric field %s", name)
 }
 
-// ClearedFields returns all nullable fields that were cleared
-// during this mutation.
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
 func (m *CasbinRuleMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(casbinrule.FieldV0) {
@@ -651,14 +643,14 @@ func (m *CasbinRuleMutation) ClearedFields() []string {
 	return fields
 }
 
-// FieldCleared returns a boolean indicates if this field was
+// FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
 func (m *CasbinRuleMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
-// ClearField clears the value for the given name. It returns an
+// ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *CasbinRuleMutation) ClearField(name string) error {
 	switch name {
@@ -684,9 +676,8 @@ func (m *CasbinRuleMutation) ClearField(name string) error {
 	return fmt.Errorf("unknown CasbinRule nullable field %s", name)
 }
 
-// ResetField resets all changes in the mutation regarding the
-// given field name. It returns an error if the field is not
-// defined in the schema.
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
 func (m *CasbinRuleMutation) ResetField(name string) error {
 	switch name {
 	case casbinrule.FieldPType:
@@ -714,54 +705,50 @@ func (m *CasbinRuleMutation) ResetField(name string) error {
 	return fmt.Errorf("unknown CasbinRule field %s", name)
 }
 
-// AddedEdges returns all edge names that were set/added in this
-// mutation.
+// AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CasbinRuleMutation) AddedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
-// AddedIDs returns all ids (to other nodes) that were added for
-// the given edge name.
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
 func (m *CasbinRuleMutation) AddedIDs(name string) []ent.Value {
 	return nil
 }
 
-// RemovedEdges returns all edge names that were removed in this
-// mutation.
+// RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CasbinRuleMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
-// RemovedIDs returns all ids (to other nodes) that were removed for
-// the given edge name.
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
 func (m *CasbinRuleMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
-// ClearedEdges returns all edge names that were cleared in this
-// mutation.
+// ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CasbinRuleMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
-// EdgeCleared returns a boolean indicates if this edge was
-// cleared in this mutation.
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
 func (m *CasbinRuleMutation) EdgeCleared(name string) bool {
 	return false
 }
 
-// ClearEdge clears the value for the given name. It returns an
-// error if the edge name is not defined in the schema.
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
 func (m *CasbinRuleMutation) ClearEdge(name string) error {
 	return fmt.Errorf("unknown CasbinRule unique edge %s", name)
 }
 
-// ResetEdge resets all changes in the mutation regarding the
-// given edge name. It returns an error if the edge is not
-// defined in the schema.
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
 func (m *CasbinRuleMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown CasbinRule edge %s", name)
 }
