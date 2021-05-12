@@ -94,7 +94,7 @@ func (cb *CurdBuilder)Route(prefix string, r gin.IRouter, pick []string) *gin.Ro
 
     hasPick := pick != nil && len(pick) > 0
     {{- range $n := $nodes }}
-        if !hasPick || go_tool.InArray(pick, "{{ $n.Name }}") {
+        if !hasPick || go_tool.InArray(pick, Type{{ $n.Name }}) {
             cb.Group(g, "{{ $n.Package }}", cb.Apis.{{ $n.Name }})
         }
     {{- end }}
