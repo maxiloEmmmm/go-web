@@ -20,6 +20,7 @@ type CasbinRuleQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.CasbinRule
@@ -43,6 +44,13 @@ func (crq *CasbinRuleQuery) Limit(limit int) *CasbinRuleQuery {
 // Offset adds an offset step to the query.
 func (crq *CasbinRuleQuery) Offset(offset int) *CasbinRuleQuery {
 	crq.offset = &offset
+	return crq
+}
+
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (crq *CasbinRuleQuery) Unique(unique bool) *CasbinRuleQuery {
+	crq.unique = &unique
 	return crq
 }
 
@@ -334,7 +342,7 @@ func (crq *CasbinRuleQuery) sqlCount(ctx context.Context) (int, error) {
 func (crq *CasbinRuleQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := crq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -351,6 +359,9 @@ func (crq *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   crq.sql,
 		Unique: true,
+	}
+	if unique := crq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := crq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -377,7 +388,7 @@ func (crq *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := crq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, casbinrule.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
@@ -396,7 +407,7 @@ func (crq *CasbinRuleQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		p(selector)
 	}
 	for _, p := range crq.order {
-		p(selector, casbinrule.ValidColumn)
+		p(selector)
 	}
 	if offset := crq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -662,7 +673,7 @@ func (crgb *CasbinRuleGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(crgb.fields)+len(crgb.fns))
 	columns = append(columns, crgb.fields...)
 	for _, fn := range crgb.fns {
-		columns = append(columns, fn(selector, casbinrule.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(crgb.fields...)
 }

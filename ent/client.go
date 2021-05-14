@@ -62,7 +62,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
-		return nil, fmt.Errorf("ent: starting a transaction: %v", err)
+		return nil, fmt.Errorf("ent: starting a transaction: %w", err)
 	}
 	cfg := c.config
 	cfg.driver = tx
@@ -82,7 +82,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BeginTx(context.Context, *sql.TxOptions) (dialect.Tx, error)
 	}).BeginTx(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("ent: starting a transaction: %v", err)
+		return nil, fmt.Errorf("ent: starting a transaction: %w", err)
 	}
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
@@ -187,7 +187,9 @@ func (c *CasbinRuleClient) DeleteOneID(id int) *CasbinRuleDeleteOne {
 
 // Query returns a query builder for CasbinRule.
 func (c *CasbinRuleClient) Query() *CasbinRuleQuery {
-	return &CasbinRuleQuery{config: c.config}
+	return &CasbinRuleQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a CasbinRule entity by its id.

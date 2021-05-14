@@ -371,6 +371,7 @@ func (cru *CasbinRuleUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // CasbinRuleUpdateOne is the builder for updating a single CasbinRule entity.
 type CasbinRuleUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *CasbinRuleMutation
 }
@@ -506,6 +507,13 @@ func (cruo *CasbinRuleUpdateOne) Mutation() *CasbinRuleMutation {
 	return cruo.mutation
 }
 
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (cruo *CasbinRuleUpdateOne) Select(field string, fields ...string) *CasbinRuleUpdateOne {
+	cruo.fields = append([]string{field}, fields...)
+	return cruo
+}
+
 // Save executes the query and returns the updated CasbinRule entity.
 func (cruo *CasbinRuleUpdateOne) Save(ctx context.Context) (*CasbinRule, error) {
 	var (
@@ -619,6 +627,18 @@ func (cruo *CasbinRuleUpdateOne) sqlSave(ctx context.Context) (_node *CasbinRule
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing CasbinRule.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := cruo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, casbinrule.FieldID)
+		for _, f := range fields {
+			if !casbinrule.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != casbinrule.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
 	if ps := cruo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

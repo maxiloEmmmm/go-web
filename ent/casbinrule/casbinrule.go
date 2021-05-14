@@ -21,7 +21,6 @@ const (
 	FieldV4 = "v4"
 	// FieldV5 holds the string denoting the v5 field in the database.
 	FieldV5 = "v5"
-
 	// Table holds the table name of the casbinrule in the database.
 	Table = "casbin_rules"
 )

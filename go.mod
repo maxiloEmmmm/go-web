@@ -3,7 +3,7 @@ module github.com/maxiloEmmmm/go-web
 go 1.13
 
 require (
-	entgo.io/ent v0.6.0
+	entgo.io/ent v0.8.0
 	github.com/casbin/casbin/v2 v2.17.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -22,8 +22,7 @@ require (
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.4.0 // indirect
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
-	golang.org/x/tools v0.0.0-20210105164027-a548c3f4af2d
-	gopkg.in/yaml.v2 v2.3.0
+	golang.org/x/tools v0.1.0
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
