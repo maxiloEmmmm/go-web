@@ -174,9 +174,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
     }
 
     func (c *{{$apiStruct}}) Create(help *contact.GinHelp) {
-        body := &struct {
-            Payload {{ $n.Name }}
-        }{}
+        body := &{{ $n.Name }}{}
         help.InValidBind(body)
 
         pipe := {{ $modelItem }}.Create()
@@ -215,9 +213,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
         }{}
         help.InValidBindUri(&uri)
 
-        body := &struct {
-            Payload {{ $n.Name }}
-        }{}
+        body := &{{ $n.Name }}{}
 
         item := {{ $modelItem }}.GetX(help.AppContext, {{- if $n.ID.IsUUID }}uuidId(uri.Id){{ else }}uri.Id{{- end }})
         if item == nil {
