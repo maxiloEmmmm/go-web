@@ -180,28 +180,28 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
         pipe := {{ $modelItem }}.Create()
         {{- range $f := $fields }}
             if !c.Fields.Create.Has || c.Fields.Create.Fields[{{ $n.Package }}.Field{{ $f.StructField }}] {
-                pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
+                pipe.Set{{ $f.StructField }}(body.{{ $f.StructField }})
             }
         {{- end }}
 
         {{- if gt ( len $n.Edges ) 0 }}
         if !c.SkipCreateAutoEdge {
             {{- range $e := $n.Edges }}
-                if body.Payload.Edges.{{ $e.StructField }} != nil {
-                    pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                if body.Edges.{{ $e.StructField }} != nil {
+                    pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
                 }
             {{- end }}
         }
         {{- end }}
 
         if c.Filter.CreatePipe != nil {
-            c.Filter.CreatePipe(help, pipe{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
+            c.Filter.CreatePipe(help, pipe{{ if hasEdges $n }}, body.Edges{{ end }})
         }
 
         item := pipe.SaveX(help.AppContext)
 
         if c.Filter.CreateAfter != nil {
-            c.Filter.CreateAfter(help, item{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
+            c.Filter.CreateAfter(help, item{{ if hasEdges $n }}, body.Edges{{ end }})
         }
 
         help.Resource(item)
@@ -222,26 +222,26 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
             pipe := item.Update()
             {{- range $f := $fields }}
                 if !c.Fields.Update.Has || c.Fields.Update.Fields[{{ $n.Package }}.Field{{ $f.StructField }}] {
-                    pipe.Set{{ $f.StructField }}(body.Payload.{{ $f.StructField }})
+                    pipe.Set{{ $f.StructField }}(body.{{ $f.StructField }})
                 }
             {{- end }}
 
             {{- if gt ( len $n.Edges ) 0 }}
             if !c.SkipUpdateAutoEdge {
                 {{- range $e := $n.Edges }}
-                    if body.Payload.Edges.{{ $e.StructField }} != nil {
-                        pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                    if body.Edges.{{ $e.StructField }} != nil {
+                        pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
                     }
                 {{- end }}
             }
             {{- end }}
 
             if c.Filter.UpdatePipe != nil {
-                c.Filter.UpdatePipe(help, pipe{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
+                c.Filter.UpdatePipe(help, pipe{{ if hasEdges $n }}, body.Edges{{ end }})
             }
             item = pipe.SaveX(help.AppContext)
             if c.Filter.UpdateAfter != nil {
-                c.Filter.UpdateAfter(help, item{{ if hasEdges $n }}, body.Payload.Edges{{ end }})
+                c.Filter.UpdateAfter(help, item{{ if hasEdges $n }}, body.Edges{{ end }})
             }
         }
         help.Resource(item)
