@@ -190,7 +190,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
         if !c.SkipCreateAutoEdge {
             {{- range $e := $n.Edges }}
                 if body.Payload.Edges.{{ $e.StructField }} != nil {
-                    pipe.Add{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                    pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
                 }
             {{- end }}
         }
@@ -234,7 +234,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
             if !c.SkipUpdateAutoEdge {
                 {{- range $e := $n.Edges }}
                     if body.Payload.Edges.{{ $e.StructField }} != nil {
-                        pipe.Add{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
+                        pipe.{{ if $e.Unique }}Set{{ else }}Add{{ end }}{{ $e.StructField }}(body.Payload.Edges.{{ $e.StructField }}{{ if not $e.Unique }}...{{ end }})
                     }
                 {{- end }}
             }
