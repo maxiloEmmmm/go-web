@@ -57,6 +57,7 @@ type BoolField struct {
 func (b *BoolField) Scan(value interface{}) error {
 	if value == nil {
 		b.Bool = false
+		return nil
 	}
 
 	val := sql.NullInt64{}
