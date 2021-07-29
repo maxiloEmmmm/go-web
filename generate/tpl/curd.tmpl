@@ -128,12 +128,13 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
     type {{ $apiStruct }}Filter struct {
         CreatePipe func(help *contact.GinHelp, createPipe *{{ $n.Name }}Create{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
         CreateAfter func(help *contact.GinHelp, item *{{ $n.Name }}{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
-        UpdatePipe func(help *contact.GinHelp, updatePipe *{{ $n.Name }}UpdateOne{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
-        UpdateAfter func(help *contact.GinHelp, item *{{ $n.Name }}{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
+        UpdatePipe func(help *contact.GinHelp, old *{{ $n.Name }}, updatePipe *{{ $n.Name }}UpdateOne{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
+        UpdateAfter func(help *contact.GinHelp, old *{{ $n.Name }}, item *{{ $n.Name }}{{ if hasEdges $n }}, edges {{ $n.Name }}Edges{{ end }})
         ListPipe func(help *contact.GinHelp, listPipe *{{ $n.Name }}Query)
         ListData func(help *contact.GinHelp, items []*{{ $n.Name }}) interface{}
         DeleteBefore func(help *contact.GinHelp, item *{{ $n.Name }})
         GetPipe func(help *contact.GinHelp, getPipe *{{ $n.Name }}Query)
+        GetData func(help *contact.GinHelp, item *{{ $n.Name }})
     }
 
     func New{{ $apiStruct }}(client *Client, opt *ApiOption) *{{ $apiStruct }} {
@@ -237,12 +238,14 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
             {{- end }}
 
             if c.Filter.UpdatePipe != nil {
-                c.Filter.UpdatePipe(help, pipe{{ if hasEdges $n }}, body.Edges{{ end }})
+                c.Filter.UpdatePipe(help, item, pipe{{ if hasEdges $n }}, body.Edges{{ end }})
             }
-            item = pipe.SaveX(help.AppContext)
+            currentItem := pipe.SaveX(help.AppContext)
             if c.Filter.UpdateAfter != nil {
-                c.Filter.UpdateAfter(help, item{{ if hasEdges $n }}, body.Edges{{ end }})
+                c.Filter.UpdateAfter(help, item, currentItem{{ if hasEdges $n }}, body.Edges{{ end }})
             }
+
+            item = currentItem
         }
         help.Resource(item)
     }
@@ -257,7 +260,13 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
         if c.Filter.GetPipe != nil {
             c.Filter.GetPipe(help, pipe)
         }
-        help.Resource(pipe.FirstX(help.AppContext))
+
+        item := pipe.FirstX(help.AppContext)
+        if c.Filter.GetData != nil {
+           item = c.Filter.GetData(help, item)
+       }
+
+        help.Resource(item)
     }
 {{ end }}
 {{ end }}
