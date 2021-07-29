@@ -73,7 +73,7 @@ func (b *BoolField) Scan(value interface{}) error {
 	return nil
 }
 
-func (b BoolField) Value() (driver.Value, error) {
+func (b *BoolField) Value() (driver.Value, error) {
 	if b.Bool {
 		return int64(BoolFieldTrue), nil
 	} else {
@@ -81,11 +81,11 @@ func (b BoolField) Value() (driver.Value, error) {
 	}
 }
 
-func (b BoolField) MarshalJSON() ([]byte, error) {
+func (b *BoolField) MarshalJSON() ([]byte, error) {
 	return json.Marshal(b.Bool)
 }
 
-func (b BoolField) UnmarshalJSON(data []byte) (err error) {
+func (b *BoolField) UnmarshalJSON(data []byte) (err error) {
 	tmp := false
 	if err = json.Unmarshal(data, &tmp); err != nil {
 		return
@@ -110,15 +110,15 @@ func (j *JsonField) Scan(value interface{}) (err error) {
 	return
 }
 
-func (j JsonField) Value() (driver.Value, error) {
+func (j *JsonField) Value() (driver.Value, error) {
 	return json.Marshal(j.Interface)
 }
 
-func (j JsonField) MarshalJSON() ([]byte, error) {
+func (j *JsonField) MarshalJSON() ([]byte, error) {
 	return json.Marshal(j.Interface)
 }
 
-func (j JsonField) UnmarshalJSON(data []byte) (err error) {
+func (j *JsonField) UnmarshalJSON(data []byte) (err error) {
 	tmp := make(map[string]interface{}, 0)
 	if err = json.Unmarshal(data, &tmp); err != nil {
 		return
@@ -144,15 +144,15 @@ func (j *JsonArrayField) Scan(value interface{}) (err error) {
 	return
 }
 
-func (j JsonArrayField) Value() (driver.Value, error) {
+func (j *JsonArrayField) Value() (driver.Value, error) {
 	return json.Marshal(j.Interface)
 }
 
-func (j JsonArrayField) MarshalJSON() ([]byte, error) {
+func (j *JsonArrayField) MarshalJSON() ([]byte, error) {
 	return json.Marshal(j.Interface)
 }
 
-func (j JsonArrayField) UnmarshalJSON(data []byte) (err error) {
+func (j *JsonArrayField) UnmarshalJSON(data []byte) (err error) {
 	tmp := make([]interface{}, 0)
 	if err = json.Unmarshal(data, &tmp); err != nil {
 		return
