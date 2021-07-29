@@ -134,7 +134,7 @@ func (cb *CurdBuilder)Group(group *gin.RouterGroup, path string, api Endpoint) {
         ListData func(help *contact.GinHelp, items []*{{ $n.Name }}) interface{}
         DeleteBefore func(help *contact.GinHelp, item *{{ $n.Name }})
         GetPipe func(help *contact.GinHelp, getPipe *{{ $n.Name }}Query)
-        GetData func(help *contact.GinHelp, item *{{ $n.Name }})
+        GetData func(help *contact.GinHelp, item *{{ $n.Name }}) *{{ $n.Name }}
     }
 
     func New{{ $apiStruct }}(client *Client, opt *ApiOption) *{{ $apiStruct }} {
