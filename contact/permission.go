@@ -216,25 +216,21 @@ func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 		c.Resource(Permission.GetPolicy())
 	}))
 	cr.POST("/rule", GinHelpHandle(func(c *GinHelp) {
-		body := &struct {
-			Payload RuleCreate `binding:"required"`
-		}{}
+		body := &RuleCreate{}
 		c.InValidBind(&body)
-		_, err := Permission.AddPolicy(strings.Split(body.Payload.Rule, ","))
+		_, err := Permission.AddPolicy(strings.Split(body.Rule, ","))
 		c.AssetsInValid("add.policy", err)
 		c.ResourceCreate(nil)
 	}))
 	cr.PUT("/rule", GinHelpHandle(func(c *GinHelp) {
-		body := &struct {
-			Payload PermissionRulePut
-		}{}
+		body := &PermissionRulePut{}
 		c.InValidBind(body)
 
-		for _, add := range body.Payload.Add {
+		for _, add := range body.Add {
 			rules := strings.Split(add, ",")
 			Permission.AddPolicy(rules)
 		}
-		for _, remove := range body.Payload.Remove {
+		for _, remove := range body.Remove {
 			Permission.RemovePolicy(strings.Split(remove, ","))
 		}
 		c.Resource(nil)
@@ -284,13 +280,11 @@ func PermissionRoute(r gin.IRouter, prefix string) *gin.RouterGroup {
 		c.ResourceDelete()
 	}))
 	cr.POST("/role", GinHelpHandle(func(c *GinHelp) {
-		body := &struct {
-			Payload RoleCreate `binding:"required"`
-		}{}
+		body := &RoleCreate{}
 		c.InValidBind(&body)
 
 		// 加前缀 区分策略中的sub
-		role := go_tool.StringJoin("role_", body.Payload.Role)
+		role := go_tool.StringJoin("role_", body.Role)
 		has, err := Permission.HasRoleForUser(DefaultRoleUser, role)
 		c.AssetsInValid("has.role", err)
 
