@@ -229,7 +229,7 @@ func GinHelpHandle(h GinHelpHandlerFunc) gin.HandlerFunc {
 
 		help.Set("page", gp)
 
-		x := &GinHelp{Context: help}
+		x := &GinHelp{Context: help, AppContext: help}
 		defer func(c *GinHelp) {
 			if err := recover(); err != nil {
 				switch err.(type) {
