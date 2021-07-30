@@ -293,10 +293,20 @@ func GinRouteAuth() gin.HandlerFunc {
 		if err := jwt.ParseToken(token); err != nil {
 			c.InValidError("auth:token:parse", err)
 		} else {
+			c.Set(AuthKey, jwt)
 			c.AppContext = context.WithValue(c.AppContext, AuthKey, jwt)
 			c.Next()
 		}
 	})
+}
+
+func AuthByContext(ctx context.Context) *JwtLib {
+	t, ok := ctx.Value(AuthKey).(*JwtLib)
+	if ok {
+		return t
+	}
+
+	return nil
 }
 
 func (help *GinHelp) SpanWrapWithApp(key string) opentracing.Span {
