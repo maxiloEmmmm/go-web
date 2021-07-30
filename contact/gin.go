@@ -280,6 +280,8 @@ type GinHelpHandlerFunc func(c *GinHelp)
 
 type H map[string]interface{}
 
+const AuthKey = "gin.auth"
+
 func GinRouteAuth() gin.HandlerFunc {
 	return GinHelpHandle(func(c *GinHelp) {
 		token := c.GetToken()
@@ -291,7 +293,7 @@ func GinRouteAuth() gin.HandlerFunc {
 		if err := jwt.ParseToken(token); err != nil {
 			c.InValidError("auth:token:parse", err)
 		} else {
-			c.Set("auth", jwt)
+			c.AppContext = context.WithValue(c.AppContext, AuthKey, jwt)
 			c.Next()
 		}
 	})
